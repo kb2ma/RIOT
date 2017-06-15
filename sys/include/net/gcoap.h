@@ -394,6 +394,11 @@ extern "C" {
 #endif
 
 /**
+ * @brief   Count of PDU buffers available for resending confirmable messages
+ */
+#define GCOAP_RESEND_BUFS_MAX      (1)
+
+/**
  * @brief   A modular collection of resources for a server
  */
 typedef struct gcoap_listener {
@@ -412,15 +417,28 @@ typedef struct gcoap_listener {
 typedef void (*gcoap_resp_handler_t)(unsigned req_state, coap_pkt_t* pdu);
 
 /**
+ * @brief  Extends request memo for resending a confirmable request.
+ */
+typedef struct {
+    sock_udp_ep_t *remote_ep;           /**< Remote endpoint */
+    uint8_t *pdu_buf;                   /**< Buffer containing the PDU */
+    size_t pdu_len;                     /**< Length of pdu_buf */
+} gcoap_resend_t;
+
+/**
  * @brief   Memo to handle a response for a request
  */
 typedef struct {
     unsigned state;                     /**< State of this memo, a GCOAP_MEMO... */
-    uint8_t hdr_buf[GCOAP_HEADER_MAXLEN];
-                                        /**< Stores a copy of the request header */
     gcoap_resp_handler_t resp_handler;  /**< Callback for the response */
     xtimer_t response_timer;            /**< Limits wait for response */
     msg_t timeout_msg;                  /**< For response timer */
+    unsigned send_limit;                /**< Count of remaining resends */
+    union {
+        uint8_t hdr_buf[GCOAP_HEADER_MAXLEN];
+                                        /**< Copy of request PDU header, if won't resend */
+        gcoap_resend_t data;            /**< Required to resend the PDU, if may resend */
+    } msg;
 } gcoap_request_memo_t;
 
 /**
@@ -434,6 +452,19 @@ typedef struct {
 } gcoap_observe_memo_t;
 
 /**
+ * @brief   Optional features for building a PDU
+ */
+typedef struct {
+    unsigned used;                      /**< GCOAP_PDUOPT_... macros ORed together
+                                         *   to indicate which options are used */
+    unsigned msg_type;                  /**< CoAP message type */
+    unsigned msg_code;                  /**< CoAP message code */
+    char *path;                         /**< Resource path, *must* start with '/' */
+    uint8_t token[GCOAP_TOKENLEN_MAX];  /**< Token for separate ACK as a request */
+    unsigned token_len;                 /**< Actual length of token attribute */
+} gcoap_pduopt_t;
+
+/**
  * @brief   Container for the state of gcoap itself
  */
 typedef struct {
@@ -443,11 +474,12 @@ typedef struct {
                                              byte of an entry is zero, the entry
                                              is available */
     uint16_t last_message_id;           /**< Last message ID used */
-    sock_udp_ep_t observers[GCOAP_OBS_CLIENTS_MAX];
-                                        /**< Observe clients; allows reuse for
-                                             observe memos */
+    sock_udp_ep_t remotes[GCOAP_OBS_CLIENTS_MAX];
+                                        /**< Remote endpoints */
     gcoap_observe_memo_t observe_memos[GCOAP_OBS_REGISTRATIONS_MAX];
                                         /**< Observed resource registrations */
+    uint8_t resend_bufs[GCOAP_RESEND_BUFS_MAX * GCOAP_PDU_BUF_SIZE];
+                                        /**< Buffers for PDU for request resends */
 } gcoap_state_t;
 
 /**
@@ -518,6 +550,20 @@ static inline ssize_t gcoap_request(coap_pkt_t *pdu, uint8_t *buf, size_t len,
                 ? gcoap_finish(pdu, 0, COAP_FORMAT_NONE)
                 : -1;
 }
+
+/**
+ * @brief   Initializes a CoAP request PDU on a buffer, with specific options.
+ *
+ * @param[out] pdu      Request metadata
+ * @param[out] buf      Buffer containing the PDU
+ * @param[in] len       Length of the buffer
+ * @param[in] options   Options for buiding the PDU
+ *
+ * @return  0 on success
+ * @return  < 0 on error
+ */
+int gcoap_req_init_opts(coap_pkt_t *pdu, uint8_t *buf, size_t len,
+                        const gcoap_pduopt_t *options);
 
 /**
  * @brief   Sends a buffer containing a CoAP request to the provided endpoint
