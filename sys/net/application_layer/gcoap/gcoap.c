@@ -234,10 +234,14 @@ static void _listen(sock_udp_t *sock)
                     memo->resp_handler(memo->state, &pdu, &remote);
                 }
 
+#if !GCOAP_SEND_WAIT_FOR_RESPONSE
                 if (memo->send_limit >= 0) {        /* if confirmable */
                     *memo->msg.data.pdu_buf = 0;    /* clear resend PDU buffer */
                 }
                 memo->state = GCOAP_MEMO_UNUSED;
+#else
+                thread_wakeup(memo->waiting_thread);
+#endif
                 break;
             case COAP_TYPE_CON:
                 DEBUG("gcoap: separate CON response not handled yet\n");
@@ -492,9 +496,16 @@ static void _expire_request(gcoap_request_memo_t *memo)
                       obs_memo->resource->path);
                 _clear_obs_memo(obs_memo, &memo->msg.data.remote_ep);
             }
+#if !GCOAP_SEND_WAIT_FOR_RESPONSE
             *memo->msg.data.pdu_buf = 0;    /* clear resend buffer */
+#endif
         }
+
+#if !GCOAP_SEND_WAIT_FOR_RESPONSE
         memo->state = GCOAP_MEMO_UNUSED;
+#else
+        thread_wakeup(memo->waiting_thread);
+#endif
     }
     else {
         /* Response already handled; timeout must have fired while response */
@@ -717,7 +728,9 @@ kernel_pid_t gcoap_init(void)
     memset(&_coap_state.open_reqs[0], 0, sizeof(_coap_state.open_reqs));
     memset(&_coap_state.observers[0], 0, sizeof(_coap_state.observers));
     memset(&_coap_state.observe_memos[0], 0, sizeof(_coap_state.observe_memos));
+#if GCOAP_RESEND_BUFS_MAX
     memset(&_coap_state.resend_bufs[0], 0, sizeof(_coap_state.resend_bufs));
+#endif
     /* randomize initial value */
     atomic_init(&_coap_state.next_message_id, (unsigned)random_uint32());
 
@@ -840,8 +853,18 @@ size_t gcoap_req_send2(const uint8_t *buf, size_t len,
     uint32_t timeout   = 0;
     memo->resp_handler = resp_handler;
 
+#if GCOAP_SEND_WAIT_FOR_RESPONSE
+    memo->waiting_thread = thread_getpid();
+    if (memo->waiting_thread == _pid) {
+        memo->state = GCOAP_MEMO_UNUSED;
+        DEBUG("gcoap: can't send; would put gcoap thread to sleep\n");
+        return 0;
+    }
+#endif
+
     switch (msg_type) {
     case COAP_TYPE_CON:
+#if GCOAP_RESEND_BUFS_MAX
         /* copy buf to resend_bufs record */
         memo->msg.data.pdu_buf = NULL;
         for (int i = 0; i < GCOAP_RESEND_BUFS_MAX; i++) {
@@ -851,6 +874,11 @@ size_t gcoap_req_send2(const uint8_t *buf, size_t len,
                 memo->msg.data.pdu_len = len;
             }
         }
+#else
+        assert(GCOAP_SEND_WAIT_FOR_RESPONSE);
+        memo->msg.data.pdu_buf = (uint8_t *)buf;
+        memo->msg.data.pdu_len = len;
+#endif
         if (memo->msg.data.pdu_buf) {
             memcpy(&memo->msg.data.remote_ep, remote, sizeof(sock_udp_ep_t));
             memo->send_limit = COAP_MAX_RETRANSMIT;
@@ -898,6 +926,12 @@ size_t gcoap_req_send2(const uint8_t *buf, size_t len,
             memo->timeout_msg.type        = GCOAP_MSG_TYPE_TIMEOUT;
             memo->timeout_msg.content.ptr = (char *)memo;
             xtimer_set_msg(&memo->response_timer, timeout, &memo->timeout_msg, _pid);
+
+#if (GCOAP_SEND_WAIT_FOR_RESPONSE)
+        thread_sleep();
+        res = memo->state;
+        memo->state = GCOAP_MEMO_UNUSED;
+#endif
         }
         else {
             res = 0;

@@ -452,7 +452,18 @@ extern "C" {
 #endif
 
 /**
+ * @brief   If non-zero, puts the sending thread to sleep to wait for a
+ *          response to a request or confirmable observe notification
+ */
+#ifndef GCOAP_SEND_WAIT_FOR_RESPONSE
+#define GCOAP_SEND_WAIT_FOR_RESPONSE      (0)
+#endif
+
+/**
  * @brief   Count of PDU buffers available for resending confirmable messages
+ *
+ * Warning! If you set this to zero and GCOAP_SEND_WAIT_FOR_RESPONSE also is
+ * zero, then you can *only* send non-confirmable messages.
  */
 #ifndef GCOAP_RESEND_BUFS_MAX
 #define GCOAP_RESEND_BUFS_MAX      (1)
@@ -513,6 +524,9 @@ typedef struct {
     gcoap_resp_handler_t resp_handler;  /**< Callback for the response */
     xtimer_t response_timer;            /**< Limits wait for response */
     msg_t timeout_msg;                  /**< For response timer */
+#if GCOAP_SEND_WAIT_FOR_RESPONSE
+    kernel_pid_t waiting_thread;        /**< Sending thread; so can wake it up */
+#endif
 } gcoap_request_memo_t;
 
 /**
@@ -541,10 +555,12 @@ typedef struct {
                                              observe memos */
     gcoap_observe_memo_t observe_memos[GCOAP_OBS_REGISTRATIONS_MAX];
                                         /**< Observed resource registrations */
+#if GCOAP_RESEND_BUFS_MAX
     uint8_t resend_bufs[GCOAP_RESEND_BUFS_MAX * GCOAP_PDU_BUF_SIZE];
                                         /**< Buffers for PDU for request resends;
                                              if first byte of an entry is zero,
                                              the entry is available */
+#endif
 } gcoap_state_t;
 
 /**
@@ -635,13 +651,20 @@ static inline ssize_t gcoap_request(coap_pkt_t *pdu, uint8_t *buf, size_t len,
 /**
  * @brief   Sends a buffer containing a CoAP request to the provided endpoint
  *
+ * If GCOAP_SEND_WAIT_FOR_RESPONSE is non-zero, then the thread sending this
+ * message sleeps here for the response, and the response handler will have
+ * been executed already when this function returns. To help an application
+ * support this sequence, the return value here is the memo state from the
+ * handler.
+ *
  * @param[in] buf           Buffer containing the PDU
  * @param[in] len           Length of the buffer
  * @param[in] remote        Destination for the packet
  * @param[in] resp_handler  Callback when response received
  *
- * @return  length of the packet
  * @return  0 if cannot send
+ * @return  length of the sent packet if does not wait for the response
+ * @return  a GCOAP_MEMO_... constant if waits here for the response
  */
 size_t gcoap_req_send2(const uint8_t *buf, size_t len,
                        const sock_udp_ep_t *remote,
