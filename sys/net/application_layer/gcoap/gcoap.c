@@ -234,7 +234,7 @@ static void _listen(sock_udp_t *sock)
                     memo->resp_handler(memo->state, &pdu, &remote);
                 }
 
-#if !GCOAP_SEND_WAIT_FOR_RESPONSE
+#if !GCOAP_SEND_WAITS_FOR_RESPONSE
                 if (memo->send_limit >= 0) {        /* if confirmable */
                     *memo->msg.data.pdu_buf = 0;    /* clear resend PDU buffer */
                 }
@@ -496,12 +496,12 @@ static void _expire_request(gcoap_request_memo_t *memo)
                       obs_memo->resource->path);
                 _clear_obs_memo(obs_memo, &memo->msg.data.remote_ep);
             }
-#if !GCOAP_SEND_WAIT_FOR_RESPONSE
+#if !GCOAP_SEND_WAITS_FOR_RESPONSE
             *memo->msg.data.pdu_buf = 0;    /* clear resend buffer */
 #endif
         }
 
-#if !GCOAP_SEND_WAIT_FOR_RESPONSE
+#if !GCOAP_SEND_WAITS_FOR_RESPONSE
         memo->state = GCOAP_MEMO_UNUSED;
 #else
         thread_wakeup(memo->waiting_thread);
@@ -853,7 +853,7 @@ size_t gcoap_req_send2(const uint8_t *buf, size_t len,
     uint32_t timeout   = 0;
     memo->resp_handler = resp_handler;
 
-#if GCOAP_SEND_WAIT_FOR_RESPONSE
+#if GCOAP_SEND_WAITS_FOR_RESPONSE
     memo->waiting_thread = thread_getpid();
     if (memo->waiting_thread == _pid) {
         memo->state = GCOAP_MEMO_UNUSED;
@@ -875,7 +875,7 @@ size_t gcoap_req_send2(const uint8_t *buf, size_t len,
             }
         }
 #else
-        assert(GCOAP_SEND_WAIT_FOR_RESPONSE);
+        assert(GCOAP_SEND_WAITS_FOR_RESPONSE);
         memo->msg.data.pdu_buf = (uint8_t *)buf;
         memo->msg.data.pdu_len = len;
 #endif
@@ -927,10 +927,10 @@ size_t gcoap_req_send2(const uint8_t *buf, size_t len,
             memo->timeout_msg.content.ptr = (char *)memo;
             xtimer_set_msg(&memo->response_timer, timeout, &memo->timeout_msg, _pid);
 
-#if (GCOAP_SEND_WAIT_FOR_RESPONSE)
-        thread_sleep();
-        res = memo->state;
-        memo->state = GCOAP_MEMO_UNUSED;
+#if GCOAP_SEND_WAITS_FOR_RESPONSE
+            thread_sleep();
+            res = memo->state;
+            memo->state = GCOAP_MEMO_UNUSED;
 #endif
         }
         else {

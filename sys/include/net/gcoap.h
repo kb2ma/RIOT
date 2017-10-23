@@ -106,8 +106,14 @@
  * GCOAP_REQ_DEFAULT_MSG_TYPE. To select the message type for a single message,
  * see section Detailed Message Init Options, below.
  *
- * Finally, call gcoap_req_send2() for the destination endpoint, as well as a
- * callback function for the host's response.
+ * Finally, call gcoap_req_send2() for the destination endpoint, which
+ * includes a callback function for the host's response. If
+ * GCOAP_SEND_WAITS_FOR_RESPONSE is set, the thread executing the send sleeps
+ * while waiting for the response or timeout. In this case, by the time
+ * gcoap_req_send2() returns, the callback already has been executed. This
+ * more synchronous mode of operation is required when no resend buffers have
+ * been allocated for confirmable requests (GCOAP_RESEND_BUFS_MAX is zero). It
+ * is a less convenient trade-off to save memory.
  *
  * ### Handling the response ###
  *
@@ -153,7 +159,9 @@
  * GCOAP_OBS_DEFAULT_MSG_TYPE. To select the message type for a single message,
  * see section Detailed Message Init Options, below.
  *
- * Finally, call gcoap_obs_send() for the resource.
+ * Finally, call gcoap_obs_send() for the resource. If confirmable and
+ * GCOAP_SEND_WAITS_FOR_RESPONSE is set, the thread executing the send sleeps
+ * while waiting for the response or timeout.
  *
  * ### Other considerations ###
  *
@@ -455,14 +463,14 @@ extern "C" {
  * @brief   If non-zero, puts the sending thread to sleep to wait for a
  *          response to a request or confirmable observe notification
  */
-#ifndef GCOAP_SEND_WAIT_FOR_RESPONSE
-#define GCOAP_SEND_WAIT_FOR_RESPONSE      (0)
+#ifndef GCOAP_SEND_WAITS_FOR_RESPONSE
+#define GCOAP_SEND_WAITS_FOR_RESPONSE      (0)
 #endif
 
 /**
  * @brief   Count of PDU buffers available for resending confirmable messages
  *
- * Warning! If you set this to zero and GCOAP_SEND_WAIT_FOR_RESPONSE also is
+ * Warning! If you set this to zero and GCOAP_SEND_WAITS_FOR_RESPONSE also is
  * zero, then you can *only* send non-confirmable messages.
  */
 #ifndef GCOAP_RESEND_BUFS_MAX
@@ -524,7 +532,7 @@ typedef struct {
     gcoap_resp_handler_t resp_handler;  /**< Callback for the response */
     xtimer_t response_timer;            /**< Limits wait for response */
     msg_t timeout_msg;                  /**< For response timer */
-#if GCOAP_SEND_WAIT_FOR_RESPONSE
+#if GCOAP_SEND_WAITS_FOR_RESPONSE
     kernel_pid_t waiting_thread;        /**< Sending thread; so can wake it up */
 #endif
 } gcoap_request_memo_t;
@@ -651,7 +659,7 @@ static inline ssize_t gcoap_request(coap_pkt_t *pdu, uint8_t *buf, size_t len,
 /**
  * @brief   Sends a buffer containing a CoAP request to the provided endpoint
  *
- * If GCOAP_SEND_WAIT_FOR_RESPONSE is non-zero, then the thread sending this
+ * If GCOAP_SEND_WAITS_FOR_RESPONSE is non-zero, then the thread sending this
  * message sleeps here for the response, and the response handler will have
  * been executed already when this function returns. To help an application
  * support this sequence, the return value here is the memo state from the
