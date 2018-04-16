@@ -455,17 +455,28 @@ size_t coap_put_option(uint8_t *buf, uint16_t lastonum, uint16_t onum, uint8_t *
     return (size_t)n;
 }
 
-size_t coap_put_option_ct(uint8_t *buf, uint16_t lastonum, uint16_t content_type)
+size_t coap_opt_put_uint(uint8_t *buf, uint16_t lastonum, uint16_t onum, uint32_t value)
 {
-    if (content_type == 0) {
-        return coap_put_option(buf, lastonum, COAP_OPT_CONTENT_FORMAT, NULL, 0);
-    }
-    else if (content_type <= 255) {
-        uint8_t tmp = content_type;
-        return coap_put_option(buf, lastonum, COAP_OPT_CONTENT_FORMAT, &tmp, sizeof(tmp));
+    uint32_t valmask = 0;
+    uint32_t tmpval  = 0;
+    uint8_t valbuf[4];
+    memset(&valbuf[0], 0, 4);
+
+    if (value > 0) {
+        /* Build option value in valbuf from LSB to MSB */
+        for (unsigned i = 3; i--; i >= 0) {
+            valmask     = (valmask << 8) | 0xFF;
+            valbuf[3-i] = (valmask & value) - tmpval;
+            tmpval      = valmask & value;
+
+            if (value == tmpval) {
+                break;
+            }
+        }
+        return coap_put_option(buf, lastonum, onum, &valbuf[i], 4-i);
     }
     else {
-        return coap_put_option(buf, lastonum, COAP_OPT_CONTENT_FORMAT, (uint8_t *)&content_type, sizeof(content_type));
+        return coap_put_option(buf, lastonum, onum, NULL, 0);
     }
 }
 

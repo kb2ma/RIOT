@@ -385,6 +385,19 @@ ssize_t coap_build_hdr(coap_hdr_t *hdr, unsigned type, uint8_t *token,
 size_t coap_put_option(uint8_t *buf, uint16_t lastonum, uint16_t onum, uint8_t *odata, size_t olen);
 
 /**
+ * @brief   Insert unsigned value option into buffer
+ *
+ * @param[out]  buf         buffer to write to
+ * @param[in]   lastonum    number of previous option (for delta calculation),
+ *                          or 0 if first option
+ * @param[in]   onum        number of option
+ * @param[in]   value       unsigned value to set
+ *
+ * @returns     amount of bytes written to @p buf
+ */
+size_t coap_opt_put_uint(uint8_t *buf, uint16_t lastonum, uint16_t onum, uint32_t value);
+
+/**
  * @brief   Insert content type option into buffer
  *
  * @param[out]  buf             buffer to write to
@@ -394,7 +407,10 @@ size_t coap_put_option(uint8_t *buf, uint16_t lastonum, uint16_t onum, uint8_t *
  *
  * @returns     amount of bytes written to @p buf
  */
-size_t coap_put_option_ct(uint8_t *buf, uint16_t lastonum, uint16_t content_type);
+static inline size_t coap_put_option_ct(uint8_t *buf, uint16_t lastonum, uint16_t content_type)
+{
+    return coap_opt_put_uint(buf, lastonum, COAP_OPT_CONTENT_FORMAT, (uint32_t)content_type);
+}
 
 /**
  * @brief   Insert URI encoded option into buffer
