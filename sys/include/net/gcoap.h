@@ -266,6 +266,13 @@ extern "C" {
 #define GCOAP_OBS_OPTIONS_BUF   (8)
 
 /**
+ * @brief   Default length to use for an option prototype integer value entry.
+ *
+ * Allows us to check boundary conditions safely.
+ */
+#define COAP_OPT_PROTO_VALUE_LEN (4)
+
+/**
  * @brief   Maximum number of requests awaiting a response
  */
 #ifndef GCOAP_REQ_WAITING_MAX

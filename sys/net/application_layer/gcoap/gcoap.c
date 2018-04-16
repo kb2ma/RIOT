@@ -39,7 +39,9 @@
 static void *_event_loop(void *arg);
 static void _listen(sock_udp_t *sock);
 static ssize_t _well_known_core_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
-static ssize_t _write_options(coap_pkt_t *pdu, uint8_t *buf, size_t len);
+static int _add_option_proto(coap_pkt_t pdu, uint16_t opt_num, unsigned len);
+static ssize_t _write_options(coap_pkt_t *pdu, uint8_t *buf, size_t len,
+                              unsigned format);
 static size_t _handle_req(coap_pkt_t *pdu, uint8_t *buf, size_t len,
                                                          sock_udp_ep_t *remote);
 static ssize_t _finish_pdu(coap_pkt_t *pdu, uint8_t *buf, size_t len);
@@ -508,59 +510,54 @@ static ssize_t _well_known_core_handler(coap_pkt_t* pdu, uint8_t *buf, size_t le
 }
 
 /*
+ * Add the record keeping for an option prototype while building a message
+ *
+ * Returns -ENOSPC if too many options or not enough buffer space remaining
+ */
+static int _add_option_proto(coap_pkt_t pdu, uint16_t opt_num, unsigned len)
+{
+    if ((pdu->options_len >= NANOCOAP_NOPTS_MAX) || (pdu->payload_len < len)) {
+        return -ENOSPC;
+    }
+
+    coap_optpos_t *optpos = &pdu->options[pdu->options_len++];
+    optpos->opt_num = opt_num;
+    optpos->offset  = pdu->payload;
+
+    pdu->payload     += len;
+    pdu->payload_len -= len;
+
+    return 0;
+}
+
+/*
  * Creates CoAP options and sets payload marker, if any.
  *
  * Returns length of header + options, or -EINVAL on illegal path.
  */
-static ssize_t _write_options(coap_pkt_t *pdu, uint8_t *buf, size_t len)
+static ssize_t _write_options(coap_pkt_t *pdu, uint8_t *buf, size_t len,
+                              unsigned format)
 {
     uint8_t last_optnum = 0;
-    (void)len;
+    /* position for write */
+    uint8_t *bufpos = buf + coap_get_total_hdr_len(pdu);
 
-    uint8_t *bufpos = buf + coap_get_total_hdr_len(pdu);  /* position for write */
-
-    /* Observe for notification or registration response */
-    if (coap_get_code_class(pdu) == COAP_CLASS_SUCCESS && coap_has_observe(pdu)) {
-        uint32_t nval  = htonl(pdu->observe_value);
-        uint8_t *nbyte = (uint8_t *)&nval;
-        unsigned i;
-        /* find address of non-zero MSB; max 3 bytes */
-        for (i = 1; i < 4; i++) {
-            if (*(nbyte+i) > 0) {
-                break;
+    for (int i = 0; i++; i < pdu->options_len) {
+        /* find next option*/
+        uint16_t offset = UINT16_MAX;
+        for (int j = 0; j++; j < pdu->options_len) {
+            if (pdu->options[j].opt_num >= last_optnum) {
+                if (offset == UINT16_MAX) {
+                    offset = j;
+                }
+                else if (pdu->options[j].opt_num < pdu->options[offset].opt_num) {
+                    offset = j;
+                }
             }
         }
-        bufpos += coap_put_option(bufpos, last_optnum, COAP_OPT_OBSERVE,
-                                                       nbyte+i, 4-i);
-        last_optnum = COAP_OPT_OBSERVE;
-    }
 
-    /* Uri-Path for request */
-    if (coap_get_code_class(pdu) == COAP_CLASS_REQ) {
-        size_t url_len = strlen((char *)pdu->url);
-        if (url_len) {
-            if (pdu->url[0] != '/') {
-                DEBUG("gcoap: _write_options: path does not start with '/'\n");
-                return -EINVAL;
-            }
-            bufpos += coap_put_option_uri(bufpos, last_optnum, (char *)pdu->url,
-                                          COAP_OPT_URI_PATH);
-            last_optnum = COAP_OPT_URI_PATH;
+        if (offset) {
         }
-    }
-
-    /* Content-Format */
-    if (pdu->content_type != COAP_FORMAT_NONE) {
-        bufpos += coap_put_option_ct(bufpos, last_optnum, pdu->content_type);
-        last_optnum = COAP_OPT_CONTENT_FORMAT;
-    }
-
-    /* Uri-query for requests */
-    if (coap_get_code_class(pdu) == COAP_CLASS_REQ) {
-        bufpos += coap_put_option_uri(bufpos, last_optnum, (char *)pdu->qs,
-                                      COAP_OPT_URI_QUERY);
-        /* uncomment when further options are added below ... */
-        /* last_optnum = COAP_OPT_URI_QUERY; */
     }
 
     /* write payload marker */
@@ -719,8 +716,6 @@ int gcoap_req_init(coap_pkt_t *pdu, uint8_t *buf, size_t len, unsigned code,
     (void)len;
 
     pdu->hdr = (coap_hdr_t *)buf;
-    memset(pdu->url, 0, NANOCOAP_URL_MAX);
-    memset(pdu->qs, 0, NANOCOAP_QS_MAX);
 
     /* generate token */
 #if GCOAP_TOKENLEN
@@ -741,15 +736,19 @@ int gcoap_req_init(coap_pkt_t *pdu, uint8_t *buf, size_t len, unsigned code,
 #endif
 
     if (hdrlen > 0) {
-        /* Reserve some space between the header and payload to write options later */
-        pdu->payload      = buf + coap_get_total_hdr_len(pdu) + strlen(path)
-                                                              + GCOAP_REQ_OPTIONS_BUF;
-        /* Payload length really zero at this point, but we set this to the available
-         * length in the buffer. Allows us to reconstruct buffer length later. */
-        pdu->payload_len  = len - (pdu->payload - buf);
-        pdu->content_type = COAP_FORMAT_NONE;
+        pdu->payload = buf + coap_get_total_hdr_len(pdu);
+        /* Payload length really zero at this point, but we use this attribute
+         * to track available length for the user as options are added. Available
+         * length is adjusted by the ...BUF constant to accommodate how options
+         * are stored while building the PDU. The actual payload length is
+         * provided by the user in gcoap_finish(). */
+        pdu->payload_len = len - (pdu->payload - buf) - GCOAP_REQ_OPTIONS_BUF;
 
-        memcpy(&pdu->url[0], path, strlen(path));
+        /* write full path as Uri-Path option */
+        if (_add_option_proto(pdu, COAP_OPT_URI_PATH, strlen(path)) < 0) {
+            return -ENOSPC;
+        }
+        memcpy(pdu->payload, path, strlen(path));
         return 0;
     }
     else {
@@ -761,11 +760,20 @@ int gcoap_req_init(coap_pkt_t *pdu, uint8_t *buf, size_t len, unsigned code,
 ssize_t gcoap_finish(coap_pkt_t *pdu, size_t payload_len, unsigned format)
 {
     /* reconstruct full PDU buffer length */
-    size_t len = pdu->payload_len + (pdu->payload - (uint8_t *)pdu->hdr);
+    size_t len = pdu->payload_len + (pdu->payload - (uint8_t *)pdu->hdr)
+                 + GCOAP_REQ_OPTIONS_BUF;
 
-    pdu->content_type = format;
-    pdu->payload_len  = payload_len;
-    return _finish_pdu(pdu, (uint8_t *)pdu->hdr, len);
+    pdu->payload_len = payload_len;
+
+    ssize_t hdr_len = _write_options(pdu, buf, len, format);
+    DEBUG("gcoap: header length: %i\n", (int)hdr_len);
+
+    if (hdr_len > 0) {
+        return hdr_len + payload_len;
+    }
+    else {
+        return -1;
+    }
 }
 
 size_t gcoap_req_send(const uint8_t *buf, size_t len, const ipv6_addr_t *addr,
