@@ -1,3 +1,3 @@
-SRC := nanocoap.c common.c
+SRC := nanocoap.c
 SUBMODULES := 1
 include $(RIOTBASE)/Makefile.base

@@ -19,7 +19,6 @@
 #include "embUnit.h"
 
 #include "net/nanocoap.h"
-#include "net/nanocoap_opt_sort.h"
 
 #include "unittests-constants.h"
 #include "tests-nanocoap.h"
