@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2016-18 Kaspar Schleiser <kaspar@schleiser.de>
+ * Copyright (C) 2018 Ken Bannister <kb2ma@runbox.com>
  *
  * This file is subject to the terms and conditions of the GNU Lesser
  * General Public License v2.1. See the file LICENSE in the top level
@@ -14,6 +15,7 @@
  * @brief       Nanocoap implementation
  *
  * @author      Kaspar Schleiser <kaspar@schleiser.de>
+ * @author      Ken Bannister <kb2ma@runbox.com>
  *
  * @}
  */
@@ -32,6 +34,10 @@ static int _decode_value(unsigned val, uint8_t **pkt_pos_ptr, uint8_t *pkt_end);
 int coap_get_option_uint(coap_pkt_t *pkt, unsigned opt_num, uint32_t *target);
 static uint32_t _decode_uint(uint8_t *pkt_pos, unsigned nbytes);
 static size_t _encode_uint(uint32_t *val);
+
+#ifdef MODULE_NANOCOAP_OPTIONS_SORT
+extern ssize_t _sort_opts(coap_pkt_t *pkt);
+#endif
 
 /* http://tools.ietf.org/html/rfc7252#section-3
  *  0                   1                   2                   3
@@ -147,7 +153,7 @@ uint8_t *coap_find_option(coap_pkt_t *pkt, unsigned opt_num)
     return NULL;
 }
 
-static uint8_t *_parse_option(coap_pkt_t *pkt, uint8_t *pkt_pos, uint16_t *delta, int *opt_len)
+uint8_t *_parse_option(coap_pkt_t *pkt, uint8_t *pkt_pos, uint16_t *delta, int *opt_len)
 {
     uint8_t *hdr_end = pkt->payload;
 
@@ -497,9 +503,12 @@ static unsigned _put_delta_optlen(uint8_t *buf, unsigned offset, unsigned shift,
 
 size_t coap_put_option(uint8_t *buf, uint16_t lastonum, uint16_t onum, uint8_t *odata, size_t olen)
 {
+#ifdef MODULE_NANOCOAP_OPTIONS_SORT
+    unsigned delta = (lastonum <= onum) ? (onum - lastonum) : 0;
+#else
     assert(lastonum <= onum);
-
     unsigned delta = (onum - lastonum);
+#endif
     *buf = 0;
 
     /* write delta value to option header: 4 upper bits of header (shift 4) +
@@ -612,7 +621,6 @@ static ssize_t _add_opt_pkt(coap_pkt_t *pkt, uint16_t optnum, uint8_t *val,
 
     uint16_t lastonum = (pkt->options_len)
             ? pkt->options[pkt->options_len - 1].opt_num : 0;
-    assert(optnum >= lastonum);
 
     size_t optlen = coap_put_option(pkt->payload, lastonum, optnum, val, val_len);
     assert(pkt->payload_len > optlen);
@@ -670,6 +678,9 @@ ssize_t coap_opt_add_uint(coap_pkt_t *pkt, uint16_t optnum, uint32_t value)
 
 ssize_t coap_opt_finish(coap_pkt_t *pkt, uint16_t flags)
 {
+#ifdef MODULE_NANOCOAP_OPTIONS_SORT
+    _sort_opts(pkt);
+#endif
     if (flags & COAP_OPT_FINISH_PAYLOAD) {
         assert(pkt->payload_len > 1);
 
