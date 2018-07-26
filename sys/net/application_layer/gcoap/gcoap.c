@@ -98,9 +98,7 @@ static char _msg_stack[GCOAP_STACK_SIZE];
 static msg_t _msg_queue[GCOAP_MSG_QUEUE_SIZE];
 static sock_udp_t _sock;
 #ifdef MODULE_SOCK_TDTLS
-static tdsock_t _tdsock = {
-    .sock = &_sock,
-};
+static tdsec_ref_t _tdsec;
 #endif
 
 /* Event/Message loop for gcoap _pid thread. */
@@ -117,19 +115,19 @@ static void *_event_loop(void *arg)
     local.netif  = SOCK_ADDR_ANY_NETIF;
     local.port   = GCOAP_PORT;
 
-#ifdef MODULE_SOCK_TDTLS
-    /* One-time initialization. Move to init module. */
-    tdsock_init();
-    
-    int res = tdsock_create(&_tdsock, &local, NULL, 0);
-#else
-    uint8_t buf[GCOAP_PDU_BUF_SIZE];
     int res = sock_udp_create(&_sock, &local, NULL, 0);
-#endif
     if (res < 0) {
         DEBUG("gcoap: cannot create sock: %d\n", res);
         return 0;
     }
+
+#ifdef MODULE_SOCK_TDTLS
+    /* One-time initialization. Move to init module. */
+    tdsec_init();
+
+    tdsec_create(&_tdsec, &_sock, _recv);
+#endif
+    uint8_t buf[GCOAP_PDU_BUF_SIZE];
 
     while(1) {
         res = msg_try_receive(&msg_rcvd);
@@ -171,18 +169,13 @@ static void *_event_loop(void *arg)
             }
         }
 
-#ifdef MODULE_SOCK_TDTLS
-        res = tdsock_recv(_tdsock, GCOAP_PDU_BUF_SIZE,
-                          open_reqs > 0 ? GCOAP_RECV_TIMEOUT : SOCK_NO_TIMEOUT,
-                          NULL);
-#else
         sock_udp_ep_t remote;
         /* We expect a -EINTR response here when unlimited waiting (SOCK_NO_TIMEOUT)
          * is interrupted when sending a message in gcoap_req_send2(). While a
          * request is outstanding, sock_udp_recv() is called here with limited
          * waiting so the request's timeout can be handled in a timely manner in
          * _event_loop(). */
-        res = sock_udp_recv(_sock, buf, sizeof(buf),
+        res = sock_udp_recv(&_sock, buf, sizeof(buf),
                             open_reqs > 0 ? GCOAP_RECV_TIMEOUT : SOCK_NO_TIMEOUT,
                             &remote);
         if (res <= 0) {
@@ -193,8 +186,18 @@ static void *_event_loop(void *arg)
 #endif
             return 0;
         }
+#ifdef MODULE_SOCK_TDTLS
+        tdsec_endpoint_t td_ep;
+        td_ep.sock_remote = &remote;
+        td_ep.td_session = NULL;
+        td_ep.peer_type = DTLS_SERVER;
+
+        /* buf may contain a handshake or other DTLS protocol msg. tinydtls
+         * will call _recv() directly when application data received. */
+        tdsec_decrypt(&_tdsec, buf, sizeof(buf), &td_ep);
+#else
         _recv(_sock, buf, res, &remote);
-#endif  /* MODULE_SOCK_TDTLS */
+#endif
     }
 
     return 0;
@@ -228,10 +231,14 @@ static void _recv(sock_udp_t *sock, uint8_t *buf, size_t len,
                 || coap_get_type(&pdu) == COAP_TYPE_CON) {
             size_t pdu_len = _handle_req(&pdu, buf, sizeof(buf), remote);
             if (pdu_len > 0) {
+#ifdef MODULE_SOCK_TDTLS
+                tdsec_encrypt(&_tdsec, buf, pdu_len, remote);
+#else
                 ssize_t bytes = sock_udp_send(sock, buf, pdu_len, remote);
                 if (bytes <= 0) {
                     DEBUG("gcoap: send response failed: %d\n", (int)bytes);
                 }
+#endif
             }
         }
         else {

@@ -41,76 +41,76 @@ dtls_handler_t _td_handlers = {
     .get_psk_key = NULL
 };
 
-/**
- * @brief   Handler function for a server response, including the state for the
- *          originating request
- *
- * If request timed out, the packet header is for the request.
- */
-typedef void (*tdsock_recv_handler_t)(unsigned req_state, coap_pkt_t* pdu,
-                                     sock_udp_ep_t *remote);
-
 static int _recv_from_dtls(dtls_context_t *ctx, session_t *session,
                            uint8 *data, size_t len)
 {
-    /* calls tdsock read callback */
-    tdsock_t * tdsock = (tdsock_t *)dtls_get_app_data(ctx);
-    /* convert session to remote */
+    tdsec_ref_t *tdsec = (tdsec_ref_t *)dtls_get_app_data(ctx);
 
-    tdsock->recv_handler(tdsock, data, len, remote);
+    /*
+     Must add 'app' void* to session_t
+    sock_udp_ep_t *sock_remote_ptr;
+    if (session->app) {
+        sock_remote_ptr = ((tdsec_endpoint_t *)session->app)->sock_remote;
+    } else {
+        sock_udp_ep_t sock_remote;
+    }
+    */
+    sock_udp_ep_t sock_remote;
+    /* convert session to sock remote ep*/
+
+    tdsec->recv_handler(tdsec, data, len, &sock_remote);
     return 0;
 }
 
 static int _send_to_remote(dtls_context_t *ctx, session_t *session,
-                         uint8 *data, size_t len)
+                           uint8 *data, size_t len)
 {
     /* convert session to remote */
     sock_udp_ep_t remote;
 
-    tdsock_t * tdsock = (tdsock_t *)dtls_get_app_data(ctx);
+    tdsec_ref_t *tdsec = (tdsec_ref_t *)dtls_get_app_data(ctx);
 
-    return sock_udp_send(tdsock->sock, data, len, &remote);
+    return sock_udp_send(tdsec->sock, data, len, &remote);
 }
 
-int tdsock_create(tdsock_t *tdsock, const sock_udp_ep_t *local,
-                  const sock_udp_ep_t *remote, uint16_t flags)
+int tdsec_create(tdsec_ref_t *tdsec, sock_udp_ep_t *sock,
+                 tdsec_recv_handler_t recv_handler)
 {
-    int res = sock_udp_create(tdsock->sock, local, remote, flags);
+    tdsec->sock = sock;
+    tdsec->td_context = dtls_new_context(tdsec);
+    tdsec->recv_handler = recv_handler;
 
-    tdsock->td_context = dtls_new_context(tdsock);
-    dtls_set_handler(tdsock->td_context, _td_handlers);
+    dtls_set_handler(tdsec->td_context, _td_handlers);
 
-    return res;
+    return 0;
 }
 
-ssize_t tdsock_recv(tdsock_t *tdsock, size_t buf_len, uint32_t timeout,
-                    const sock_udp_ep_t *remote)
+ssize_t tdsec_decrypt(tdsec_ref_t *tdsec, uint8_t *buf, size_t len, 
+                      tdsec_endpoint_t *td_ep)
 {
-    /* Add to buffer length for DTLS overhead */
-    uint8_t buf[buf_len];
-
-    ssize_t res = sock_udp_recv(tdsock->sock, buf, buf_len, timeout, remote);
-
-    if (res) {
-        /* convert remote to session */
-        session_t remote_addr;
-
-        res = dtls_handle_message(tdsock->td_context, &remote_addr, buf, buf_len);
+    session_t *td_session_ptr;
+    if (td_ep->td_session) {
+        td_session_ptr = td_ep->td_session;
+    } else {
+        session_t td_session;
+        td_session_ptr = &td_session;
+        /* create session from sock remote ep */
     }
 
+    res = dtls_handle_message(tdsec->td_context, td_session_ptr, buf, len);
     return res;
 }
 
-ssize_t tdsock_send(tdsock_t *tdsock, const void *data, size_t len,
-                    const sock_udp_ep_t *remote)
+ssize_t tdsec_encrypt(tdsec_ref_t *tdsec, const void *data, size_t len,
+                      const sock_udp_ep_t *remote)
 {
     /* convert remote to session */
-    session_t remote_addr;
+    session_t session;
     
-    return dtls_write(tdsock->td_context, session, data, len);
+    return dtls_write(tdsec->td_context, &session, data, len);
 }
 
-void tdsock_init(void)
+void tdsec_init(void)
 {
     /* verify cipher suites here */
 

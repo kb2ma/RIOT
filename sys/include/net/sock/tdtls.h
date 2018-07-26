@@ -7,15 +7,15 @@
  */
 
 /**
- * @defgroup    net_sock_tdtls   tinydtls sock wrapper
+ * @defgroup    net_sock_tdtls   tinydtls sock security
  * @ingroup     net_sock
  *
- * @brief       tinydtls sock wrapper
+ * @brief       tinydtls sock security
  *
  * @{
  *
  * @file
- * @brief   tinydtls sock wrapper
+ * @brief   tinydtls sock security
  *
  * @author  Ken Bannister <kb2ma@runbox.com>
  */
@@ -24,54 +24,57 @@
 #define NET_SOCK_TDTLS_H
 
 #include "net/sock/udp.h"
+#include "dtls.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief   Application handler function for decrypted incoming message
+ */
+typedef void (*tdsec_recv_handler_t)(tdsec_ref_t *tdsec, uint8 *data,
+                                      size_t len, sock_udp_ep_t *remote);
 
 /**
- * @brief  Wrapper for UDP sock
+ * @brief   Root reference object for tdsec sock security
  */
 typedef struct {
-    sock_udp_t *sock;             /**< Wrapped sock */
-    dtls_context_t *td_context;   /**< tinydtls context object */
-} tdsock_t;
-
+    sock_udp_t *sock;                   /**< UDP sock reference */
+    dtls_context_t *td_context;         /**< tinydtls context object */
+    tdsec_recv_handler_t recv_handler;  /**< Application callback for decrypted message */
+} tdsec_ref_t;
 
 /**
- * @brief   Creates a new tinydtls UDP sock object
- *
- * Follows sock_udp_create(). See that function for details.
- *
- * @pre `(tdsock != NULL)`
- * @pre `(remote == NULL) || (remote->port != 0)`
- *
- * @param[out] tdsock   The resulting tdsock object.
- * @param[in] local     Local end point for the sock object.
- * @param[in] flags     Flags for the sock object. See also
- *                      [sock flags](@ref net_sock_flags).
- *                      May be 0.
+ * @brief   Encryption session with a remote endpoint
+ */
+typedef struct {
+    sock_udp_ep_t *sock_remote;
+    session_t *td_session;
+    dtls_peer_type peer_type;
+} tdsec_endpoint_t;
+
+/**
+ * @brief   Creates a tinydtls sock security reference object.
  *
  * @return  0 on success.
- * @return <- on failure, per sock_udp_create() documentation
  */
-int tdsock_create(tdsock_t *tdsock, const sock_udp_ep_t *local,
-                  const sock_udp_ep_t *remote, uint16_t flags);
+int tdsec_create(tdsec_ref_t *tdsec, sock_udp_t *sock,
+                 tdsec_recv_handler_t recv_handler);
 
-ssize_t tdsock_recv(tdsock_t *tdsock, size_t buf_len, uint32_t timeout,
-                    sock_udp_ep_t *remote);
+ssize_t tdsec_decrypt(tdsec_ref_t *tdsec, uint8_t buf, size_t len,
+                      tdsec_endpoint_t *td_ep);
 
 ssize_t tdsock_send(tdsock_t *tdsock, const void *data, size_t len,
                     const sock_udp_ep_t *remote);
 
 
 /**
- * @brief One-time initialization.
+ * @brief One-time initialization
  *
  * Must be called before any other use.
  */
-void tdsock_init(void);
+void tdsec_init(void);
 
 #ifdef __cplusplus
 }
