@@ -223,9 +223,6 @@
 
 #include "net/ipv6/addr.h"
 #include "net/sock/udp.h"
-#ifdef MODULE_SOCK_TDTLS
-#include "net/sock/tdtls.h"
-#endif
 #include "net/nanocoap.h"
 #include "xtimer.h"
 

@@ -24,6 +24,9 @@
 
 #include "assert.h"
 #include "net/gcoap.h"
+#ifdef MODULE_SOCK_TDTLS
+#include "net/sock/tdtls.h"
+#endif
 #include "mutex.h"
 #include "random.h"
 #include "thread.h"
@@ -38,7 +41,6 @@
 
 /* Internal functions */
 static void *_event_loop(void *arg);
-static void _listen(sock_udp_t *sock);
 static ssize_t _well_known_core_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
 static ssize_t _write_options(coap_pkt_t *pdu, uint8_t *buf, size_t len);
 static size_t _handle_req(coap_pkt_t *pdu, uint8_t *buf, size_t len,
@@ -55,8 +57,8 @@ static int _find_obs_memo(gcoap_observe_memo_t **memo, sock_udp_ep_t *remote,
                                                        coap_pkt_t *pdu);
 static void _find_obs_memo_resource(gcoap_observe_memo_t **memo,
                                    const coap_resource_t *resource);
-static void _recv(sock_udp_t *sock, uint8_t *buf, size_t len,
-                  const sock_udp_ep_t *remote);
+static void _read_msg(sock_udp_t *sock, uint8_t *buf, size_t len,
+                      sock_udp_ep_t *remote);
 
 /* Internal variables */
 const coap_resource_t _default_resources[] = {
@@ -125,7 +127,7 @@ static void *_event_loop(void *arg)
     /* One-time initialization. Move to init module. */
     tdsec_init();
 
-    tdsec_create(&_tdsec, &_sock, _recv);
+    tdsec_create(&_tdsec, &_sock, _read_msg);
 #endif
     uint8_t buf[GCOAP_PDU_BUF_SIZE];
 
@@ -170,6 +172,7 @@ static void *_event_loop(void *arg)
         }
 
         sock_udp_ep_t remote;
+        uint8_t open_reqs = gcoap_op_state();
         /* We expect a -EINTR response here when unlimited waiting (SOCK_NO_TIMEOUT)
          * is interrupted when sending a message in gcoap_req_send2(). While a
          * request is outstanding, sock_udp_recv() is called here with limited
@@ -189,14 +192,15 @@ static void *_event_loop(void *arg)
 #ifdef MODULE_SOCK_TDTLS
         tdsec_endpoint_t td_ep;
         td_ep.sock_remote = &remote;
-        td_ep.td_session = NULL;
-        td_ep.peer_type = DTLS_SERVER;
+        td_ep.td_session  = NULL;
+        td_ep.peer_type   = DTLS_SERVER;
 
-        /* buf may contain a handshake or other DTLS protocol msg. tinydtls
-         * will call _recv() directly when application data received. */
-        tdsec_decrypt(&_tdsec, buf, sizeof(buf), &td_ep);
+        /* Read encrypted message. buf may contain a handshake or other DTLS
+         * protocol message. tinydtls will call _read_msg() directly when
+         * application data received. */
+        tdsec_read_msg(&_tdsec, buf, sizeof(buf), &td_ep);
 #else
-        _recv(_sock, buf, res, &remote);
+        _read_msg(_sock, buf, res, &remote);
 #endif
     }
 
@@ -204,12 +208,14 @@ static void *_event_loop(void *arg)
 }
 
 /* Handle incoming CoAP message. */
-static void _recv(sock_udp_t *sock, uint8_t *buf, size_t len,
-                  const sock_udp_ep_t *remote)
+static void _read_msg(sock_udp_t *sock, uint8_t *buf, size_t len,
+                      sock_udp_ep_t *remote)
 {
+#ifdef MODULE_SOCK_TDTLS
+    (void)sock;
+#endif
     coap_pkt_t pdu;
     gcoap_request_memo_t *memo = NULL;
-    uint8_t open_reqs = gcoap_op_state();
 
     int res = coap_parse(&pdu, buf, len);
     if (res < 0) {
@@ -232,7 +238,10 @@ static void _recv(sock_udp_t *sock, uint8_t *buf, size_t len,
             size_t pdu_len = _handle_req(&pdu, buf, sizeof(buf), remote);
             if (pdu_len > 0) {
 #ifdef MODULE_SOCK_TDTLS
-                tdsec_encrypt(&_tdsec, buf, pdu_len, remote);
+                /* Encrypt and send message. tinydtls may need to send other
+                 * DTLS protocol messages to remote, and will call
+                 * sock_udp_send() directly. */
+                tdsec_send(&_tdsec, buf, pdu_len, remote);
 #else
                 ssize_t bytes = sock_udp_send(sock, buf, pdu_len, remote);
                 if (bytes <= 0) {

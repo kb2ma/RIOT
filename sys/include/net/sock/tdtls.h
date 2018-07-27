@@ -25,6 +25,7 @@
 
 #include "net/sock/udp.h"
 #include "dtls.h"
+#include "dtls_debug.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,7 +34,7 @@ extern "C" {
 /**
  * @brief   Application handler function for decrypted incoming message
  */
-typedef void (*tdsec_recv_handler_t)(tdsec_ref_t *tdsec, uint8 *data,
+typedef void (*tdsec_recv_handler_t)(sock_udp_t *sock, uint8_t *data,
                                       size_t len, sock_udp_ep_t *remote);
 
 /**
@@ -62,10 +63,10 @@ typedef struct {
 int tdsec_create(tdsec_ref_t *tdsec, sock_udp_t *sock,
                  tdsec_recv_handler_t recv_handler);
 
-ssize_t tdsec_decrypt(tdsec_ref_t *tdsec, uint8_t buf, size_t len,
+ssize_t tdsec_read_msg(tdsec_ref_t *tdsec, uint8_t *buf, size_t len,
                       tdsec_endpoint_t *td_ep);
 
-ssize_t tdsock_send(tdsock_t *tdsock, const void *data, size_t len,
+ssize_t tdsec_send(tdsec_ref_t *tdsec, const void *data, size_t len,
                     const sock_udp_ep_t *remote);
 
 
