@@ -19,6 +19,7 @@
 
 #include "net/sock/tdtls.h"
 #include "dtls.h"
+#include "dtls_keys.h"
 
 /*
  * From tinydtls:
@@ -29,6 +30,10 @@
 #define SECURE_CIPHER_RPK_IDS (0xC0AE)
 #define SECURE_CIPHER_LIST { SECURE_CIPHER_PSK_IDS, SECURE_CIPHER_RPK_IDS }
 
+static int _get_psk_info_server(struct dtls_context_t *ctx, const session_t *session,
+                                dtls_credentials_type_t type,
+                                const unsigned char *id, size_t id_len,
+                                unsigned char *result, size_t result_length);
 static int _recv_from_dtls(dtls_context_t *ctx, session_t *session,
                            uint8 *data, size_t len);
 static int _send_to_remote(dtls_context_t *ctx, session_t *session,
@@ -40,8 +45,53 @@ dtls_handler_t _td_handlers = {
     .write        = _send_to_remote,
     .read         = _recv_from_dtls,
     .event        = NULL,
-    .get_psk_info = NULL
+    .get_psk_info = _get_psk_info_server,
 };
+
+static int _get_psk_info_server(struct dtls_context_t *ctx, const session_t *session,
+                                dtls_credentials_type_t type,
+                                const unsigned char *id, size_t id_len,
+                                unsigned char *result, size_t result_length)
+{
+    (void) ctx;
+    (void) session;
+
+    struct keymap_t {
+        unsigned char *id;
+        size_t id_length;
+        unsigned char *key;
+        size_t key_length;
+    } psk[3] = {
+        /* FIXME */
+        { (unsigned char *)psk_id, psk_id_length,
+          (unsigned char *)psk_key, psk_key_length },
+        { (unsigned char *)"default identity", 16,  /* FIXME */
+          (unsigned char *)"\x11\x22\x33", 3 },     /* FIXME */
+        { (unsigned char *)"\0", 2,                 /* FIXME */
+          (unsigned char *)"", 1 }                  /* FIXME */
+    };
+
+    if (type != DTLS_PSK_KEY) {
+        return 0;
+    }
+
+    if (id) {
+        uint8_t i;
+        for (i = 0; i < sizeof(psk) / sizeof(struct keymap_t); i++) {
+            if (id_len == psk[i].id_length && memcmp(id, psk[i].id, id_len) == 0) {
+                if (result_length < psk[i].key_length) {
+                    dtls_warn("buffer too small for PSK");
+                    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+                }
+
+                memcpy(result, psk[i].key, psk[i].key_length);
+                return psk[i].key_length;
+            }
+        }
+    }
+
+    return dtls_alert_fatal_create(DTLS_ALERT_DECRYPT_ERROR);
+}
 
 static int _recv_from_dtls(dtls_context_t *ctx, session_t *session,
                            uint8 *data, size_t len)
@@ -71,7 +121,7 @@ static void _copy_sock_ep(const sock_udp_ep_t *remote, session_t *session) {
     session->size = sizeof(remote->addr.ipv6) + sizeof(remote->port);
     memcpy(session->addr.u8, remote->addr.ipv6, sizeof(remote->addr.ipv6));
     session->port = remote->port;
-    session->ifindex = remote->netif;
+    session->ifindex = SOCK_ADDR_ANY_NETIF;
 }
 
 static void _copy_tdsec_ep(const session_t *session, sock_udp_ep_t *remote) {
@@ -93,8 +143,8 @@ int tdsec_create(tdsec_ref_t *tdsec, sock_udp_t *sock,
     return 0;
 }
 
-ssize_t tdsec_read_msg(tdsec_ref_t *tdsec, uint8_t *buf, size_t len, 
-                      tdsec_endpoint_t *td_ep)
+ssize_t tdsec_read(tdsec_ref_t *tdsec, uint8_t *buf, size_t len, 
+                   tdsec_endpoint_t *td_ep)
 {
     session_t td_session;
     _copy_sock_ep(td_ep->sock_remote, &td_session);
@@ -114,8 +164,6 @@ ssize_t tdsec_send(tdsec_ref_t *tdsec, const void *data, size_t len,
 
 void tdsec_init(void)
 {
-    /* verify cipher suites here */
-
     dtls_init();
 
 #ifdef TINYDTLS_LOG_LVL

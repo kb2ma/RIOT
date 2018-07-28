@@ -124,9 +124,6 @@ static void *_event_loop(void *arg)
     }
 
 #ifdef MODULE_SOCK_TDTLS
-    /* One-time initialization. Move to init module. */
-    tdsec_init();
-
     tdsec_create(&_tdsec, &_sock, _read_msg);
 #endif
     uint8_t buf[GCOAP_PDU_BUF_SIZE];
@@ -198,7 +195,7 @@ static void *_event_loop(void *arg)
         /* Read encrypted message. buf may contain a handshake or other DTLS
          * protocol message. tinydtls will call _read_msg() directly when
          * application data received. */
-        tdsec_read_msg(&_tdsec, buf, sizeof(buf), &td_ep);
+        tdsec_read(&_tdsec, buf, sizeof(buf), &td_ep);
 #else
         _read_msg(_sock, buf, res, &remote);
 #endif
@@ -240,7 +237,7 @@ static void _read_msg(sock_udp_t *sock, uint8_t *buf, size_t len,
 #ifdef MODULE_SOCK_TDTLS
                 /* Encrypt and send message. tinydtls may need to send other
                  * DTLS protocol messages to remote, and will call
-                 * sock_udp_send() directly. */
+                 * sock_udp_send() directly when ready. */
                 tdsec_send(&_tdsec, buf, pdu_len, remote);
 #else
                 ssize_t bytes = sock_udp_send(sock, buf, pdu_len, remote);

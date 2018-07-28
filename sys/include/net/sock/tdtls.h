@@ -10,12 +10,12 @@
  * @defgroup    net_sock_tdtls   tinydtls sock security
  * @ingroup     net_sock
  *
- * @brief       tinydtls sock security
+ * @brief       Simple tinydtls based DTLS adapter for sock
  *
  * @{
  *
  * @file
- * @brief   tinydtls sock security
+ * @brief   tdtls definition
  *
  * @author  Ken Bannister <kb2ma@runbox.com>
  */
@@ -55,27 +55,33 @@ typedef struct {
     dtls_peer_type peer_type;
 } tdsec_endpoint_t;
 
+
 /**
- * @brief   Creates a tinydtls sock security reference object.
+ * @brief tinydtls initialization
+ *
+ * Must be called before any other use.
+ */
+void tdsec_init(void);
+
+/**
+ * @brief   Creates a tinydtls sock security object.
  *
  * @return  0 on success.
  */
 int tdsec_create(tdsec_ref_t *tdsec, sock_udp_t *sock,
                  tdsec_recv_handler_t recv_handler);
 
-ssize_t tdsec_read_msg(tdsec_ref_t *tdsec, uint8_t *buf, size_t len,
-                      tdsec_endpoint_t *td_ep);
-
-ssize_t tdsec_send(tdsec_ref_t *tdsec, const void *data, size_t len,
-                    const sock_udp_ep_t *remote);
-
+/**
+ * @brief   Decrypts and reads a message from a remote peer.
+ */
+ssize_t tdsec_read(tdsec_ref_t *tdsec, uint8_t *buf, size_t len,
+                   tdsec_endpoint_t *td_ep);
 
 /**
- * @brief One-time initialization
- *
- * Must be called before any other use.
+ * @brief   Encrypts and sends a message to a remote peer.
  */
-void tdsec_init(void);
+ssize_t tdsec_send(tdsec_ref_t *tdsec, const void *data, size_t len,
+                   const sock_udp_ep_t *remote);
 
 #ifdef __cplusplus
 }

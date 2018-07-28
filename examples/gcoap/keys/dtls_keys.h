@@ -68,11 +68,7 @@ static const unsigned char ecdsa_pub_key_y[] = {
     0x4F, 0xAB, 0xC3, 0x6F, 0xC7, 0x72, 0xF8, 0x29
 };
 #endif /* DTLS_ECC */
-#endif /* MODULE_TLSMAN_TINYDTLS */
-
-#ifdef MODULE_TLSMAN_WOLFSSL
-/* TODO: Default set of keys for WolfSSL*/
-#endif /* MODULE_TLSMAN_WOLFSSL */
+#endif /* MODULE_SOCK_TDTLS */
 
 #ifdef __cplusplus
 }
