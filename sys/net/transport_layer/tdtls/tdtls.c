@@ -19,21 +19,19 @@
 
 #include "net/sock/tdtls.h"
 #include "dtls.h"
-#include "dtls_keys.h"
+#include "tdsec_params.h"
 
-/*
- * From tinydtls:
- * TLS_PSK_WITH_AES_128_CCM_8           0xC0A8  (RFC 6655)
- * TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8   0xC0AE  (RFC 7251)
- */
+/* 0xC0A8 = TLS_PSK_WITH_AES_128_CCM_8 (RFC 6655) */
 #define SECURE_CIPHER_PSK_IDS (0xC0A8)
+/* 0xC0AE = TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8 (RFC 7251) */
 #define SECURE_CIPHER_RPK_IDS (0xC0AE)
 #define SECURE_CIPHER_LIST { SECURE_CIPHER_PSK_IDS, SECURE_CIPHER_RPK_IDS }
+#define TDSEC_PSK_PARAMS_NUMOF (sizeof(tdsec_psk_params) / sizeof(tdsec_psk_params_t))
 
-static int _get_psk_info_server(struct dtls_context_t *ctx, const session_t *session,
-                                dtls_credentials_type_t type,
-                                const unsigned char *id, size_t id_len,
-                                unsigned char *result, size_t result_length);
+static int _get_psk_info(struct dtls_context_t *ctx, const session_t *session,
+                         dtls_credentials_type_t type,
+                         const unsigned char *id, size_t id_len,
+                         unsigned char *result, size_t result_length);
 static int _recv_from_dtls(dtls_context_t *ctx, session_t *session,
                            uint8 *data, size_t len);
 static int _send_to_remote(dtls_context_t *ctx, session_t *session,
@@ -45,52 +43,61 @@ dtls_handler_t _td_handlers = {
     .write        = _send_to_remote,
     .read         = _recv_from_dtls,
     .event        = NULL,
-    .get_psk_info = _get_psk_info_server,
+    .get_psk_info = _get_psk_info,
 };
 
-static int _get_psk_info_server(struct dtls_context_t *ctx, const session_t *session,
-                                dtls_credentials_type_t type,
-                                const unsigned char *id, size_t id_len,
-                                unsigned char *result, size_t result_length)
+/* Find requested PSK parameter; update result and result_length. */
+static int _get_psk_info(struct dtls_context_t *ctx, const session_t *session,
+                         dtls_credentials_type_t type,
+                         const unsigned char *id, size_t id_len,
+                         unsigned char *result, size_t result_length)
 {
     (void) ctx;
     (void) session;
 
-    struct keymap_t {
-        unsigned char *id;
-        size_t id_length;
-        unsigned char *key;
-        size_t key_length;
-    } psk[3] = {
-        /* FIXME */
-        { (unsigned char *)psk_id, psk_id_length,
-          (unsigned char *)psk_key, psk_key_length },
-        { (unsigned char *)"default identity", 16,  /* FIXME */
-          (unsigned char *)"\x11\x22\x33", 3 },     /* FIXME */
-        { (unsigned char *)"\0", 2,                 /* FIXME */
-          (unsigned char *)"", 1 }                  /* FIXME */
-    };
+    switch (type) {
+    case DTLS_PSK_IDENTITY: {
+        /* client: get id for session -- assume first entry for now */
+        tdsec_psk_params_t param = tdsec_psk_params[0];
 
-    if (type != DTLS_PSK_KEY) {
-        return 0;
+        if (result_length < param.id_len) {
+            dtls_warn("cannot set psk_identity -- buffer too small\n");
+            return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
+        }
+        memcpy(result, param.client_id, param.id_len);
+        return param.id_len;
     }
 
-    if (id) {
-        uint8_t i;
-        for (i = 0; i < sizeof(psk) / sizeof(struct keymap_t); i++) {
-            if (id_len == psk[i].id_length && memcmp(id, psk[i].id, id_len) == 0) {
-                if (result_length < psk[i].key_length) {
+    case DTLS_PSK_KEY: {
+        /* server: get key for provided client id */
+        for (uint8_t i = 0; i < TDSEC_PSK_PARAMS_NUMOF; i++) {
+            tdsec_psk_params_t param = tdsec_psk_params[i];
+
+            if ((id_len == param.id_len)
+                    && (memcmp(id, param.client_id, id_len) == 0)) {
+                if (result_length < param.key_len) {
                     dtls_warn("buffer too small for PSK");
                     return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
                 }
 
-                memcpy(result, psk[i].key, psk[i].key_length);
-                return psk[i].key_length;
+                memcpy(result, param.key, param.key_len);
+                return param.key_len;
             }
         }
+
+        dtls_warn("PSK for unknown id requested, exiting\n");
+        return dtls_alert_fatal_create(DTLS_ALERT_ILLEGAL_PARAMETER);
     }
 
-    return dtls_alert_fatal_create(DTLS_ALERT_DECRYPT_ERROR);
+    case DTLS_PSK_HINT:
+        /* server: unused */
+        return 0;
+
+    default:
+        dtls_warn("unsupported request type: %d\n", type);
+    }
+
+    return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
 }
 
 static int _recv_from_dtls(dtls_context_t *ctx, session_t *session,
@@ -165,8 +172,13 @@ ssize_t tdsec_send(tdsec_ref_t *tdsec, const void *data, size_t len,
 void tdsec_init(void)
 {
     dtls_init();
-
 #ifdef TINYDTLS_LOG_LVL
     dtls_set_log_level(TINYDTLS_LOG_LVL);
 #endif
+
+    /* finish initializing PSK params */
+    for (uint8_t i = 0; i < TDSEC_PSK_PARAMS_NUMOF; i++) {
+        tdsec_psk_params[i].id_len = strlen(tdsec_psk_params[i].client_id);
+        tdsec_psk_params[i].key_len = strlen(tdsec_psk_params[i].key);
+    }
 }

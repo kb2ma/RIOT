@@ -55,6 +55,16 @@ typedef struct {
     dtls_peer_type peer_type;
 } tdsec_endpoint_t;
 
+/**
+ * @brief PSK parameters
+ */
+typedef struct {
+    const char *client_id;   /**< client identity */
+    size_t id_len;           /**< length of client_id */ 
+    const char *key;         /**< key itself */
+    size_t key_len;          /**< length of key */ 
+} tdsec_psk_params_t;
+
 
 /**
  * @brief tinydtls initialization

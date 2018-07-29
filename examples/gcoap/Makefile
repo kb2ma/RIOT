@@ -35,8 +35,9 @@ USEMODULE += gnrc_icmpv6_echo
 # Use tinydtls sock adapter
 USEMODULE += sock_tdtls
 ifneq (,$(filter sock_tdtls,$(USEMODULE)))
-  GCOAP_PORT ?= 5684
-  INCLUDES += -I$(APPDIR)/keys
+  GCOAP_PORT = 5684
+  CFLAGS += -DGCOAP_PORT=$(GCOAP_PORT)
+  INCLUDES += -I$(CURDIR)
   # Log level for the tinydtls package
   # Values: 0:EMERG (Default), 1:ALERT 2:CRIT 3:WARN 4:NOTICE 5:INFO 6:DEBUG
   TINYDTLS_LOG ?= 6
