@@ -90,7 +90,7 @@ static int _get_psk_info(struct dtls_context_t *ctx, const session_t *session,
     }
 
     case DTLS_PSK_HINT:
-        /* server: unused */
+        /* server: get hint for client; unused */
         return 0;
 
     default:
