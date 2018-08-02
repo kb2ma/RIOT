@@ -187,15 +187,10 @@ static void *_event_loop(void *arg)
             return 0;
         }
 #ifdef MODULE_SOCK_TDTLS
-        tdsec_endpoint_t td_ep;
-        td_ep.sock_remote = &remote;
-        td_ep.td_session  = NULL;
-        td_ep.peer_type   = DTLS_SERVER;
-
         /* Read encrypted message. buf may contain a handshake or other DTLS
          * protocol message. tinydtls will call _read_msg() directly when
          * application data received. */
-        tdsec_read(&_tdsec, buf, sizeof(buf), &td_ep);
+        tdsec_read(&_tdsec, buf, sizeof(buf), &remote);
 #else
         _read_msg(_sock, buf, res, &remote);
 #endif
@@ -910,7 +905,16 @@ size_t gcoap_req_send2(const uint8_t *buf, size_t len,
     }
 
     /* Memos complete; send msg and start timer */
+#ifdef MODULE_SOCK_TDTLS
+    ssize_t res = tdsec_connect(&_tdsec, remote);
+    if (res >= 0) {
+        tdsec_send(&_tdsec, buf, len, remote);
+    } else {
+        DEBUG("gcoap: tinydtls connect failed\n");
+    }
+#else
     ssize_t res = sock_udp_send(&_sock, buf, len, remote);
+#endif  /* MODULE_SOCK_TDTLS */
 
     /* timeout may be zero for non-confirmable */
     if ((memo != NULL) && (res > 0) && (timeout > 0)) {

@@ -21,6 +21,9 @@
 #include "dtls.h"
 #include "tdsec_params.h"
 
+#define ENABLE_DEBUG (0)
+#include "debug.h"
+
 /* 0xC0A8 = TLS_PSK_WITH_AES_128_CCM_8 (RFC 6655) */
 #define SECURE_CIPHER_PSK_IDS (0xC0A8)
 /* 0xC0AE = TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8 (RFC 7251) */
@@ -61,7 +64,7 @@ static int _get_psk_info(struct dtls_context_t *ctx, const session_t *session,
         tdsec_psk_params_t param = tdsec_psk_params[0];
 
         if (result_length < param.id_len) {
-            dtls_warn("cannot set psk_identity -- buffer too small\n");
+            DEBUG("cannot set psk_identity -- buffer too small\n");
             return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
         }
         memcpy(result, param.client_id, param.id_len);
@@ -76,7 +79,7 @@ static int _get_psk_info(struct dtls_context_t *ctx, const session_t *session,
             if ((id_len == param.id_len)
                     && (memcmp(id, param.client_id, id_len) == 0)) {
                 if (result_length < param.key_len) {
-                    dtls_warn("buffer too small for PSK");
+                    DEBUG("buffer too small for PSK");
                     return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
                 }
 
@@ -85,7 +88,7 @@ static int _get_psk_info(struct dtls_context_t *ctx, const session_t *session,
             }
         }
 
-        dtls_warn("PSK for unknown id requested, exiting\n");
+        DEBUG("PSK for unknown id requested, exiting\n");
         return dtls_alert_fatal_create(DTLS_ALERT_ILLEGAL_PARAMETER);
     }
 
@@ -94,7 +97,7 @@ static int _get_psk_info(struct dtls_context_t *ctx, const session_t *session,
         return 0;
 
     default:
-        dtls_warn("unsupported request type: %d\n", type);
+        DEBUG("unsupported request type: %d\n", type);
     }
 
     return dtls_alert_fatal_create(DTLS_ALERT_INTERNAL_ERROR);
@@ -121,13 +124,18 @@ static int _send_to_remote(dtls_context_t *ctx, session_t *session,
 
     tdsec_ref_t *tdsec = (tdsec_ref_t *)dtls_get_app_data(ctx);
 
-    return sock_udp_send(tdsec->sock, data, len, &sock_remote);
+    ssize_t ret = sock_udp_send(tdsec->sock, data, len, &sock_remote);
+    if (ret <= 0) {
+        DEBUG("tdsec: fail to send: %d\n", ret);
+    }
+    return ret;
 }
 
 static void _copy_sock_ep(const sock_udp_ep_t *remote, session_t *session) {
     session->size = sizeof(remote->addr.ipv6) + sizeof(remote->port);
     memcpy(session->addr.u8, remote->addr.ipv6, sizeof(remote->addr.ipv6));
     session->port = remote->port;
+    /* session->ifindex = (uint16_t)gnrc_netif_iter(NULL)->pid; */
     session->ifindex = SOCK_ADDR_ANY_NETIF;
 }
 
@@ -135,6 +143,7 @@ static void _copy_tdsec_ep(const session_t *session, sock_udp_ep_t *remote) {
     remote->family = AF_INET6;
     memcpy(remote->addr.ipv6, session->addr.u8, sizeof(session->addr.u8));
     remote->port = session->port;
+    /* remote->netif = (uint16_t)gnrc_netif_iter(NULL)->pid; */
     remote->netif = SOCK_ADDR_ANY_NETIF;
 }
 
@@ -150,11 +159,46 @@ int tdsec_create(tdsec_ref_t *tdsec, sock_udp_t *sock,
     return 0;
 }
 
-ssize_t tdsec_read(tdsec_ref_t *tdsec, uint8_t *buf, size_t len, 
-                   tdsec_endpoint_t *td_ep)
+ssize_t tdsec_connect(tdsec_ref_t *tdsec, const sock_udp_ep_t *remote)
 {
     session_t td_session;
-    _copy_sock_ep(td_ep->sock_remote, &td_session);
+    _copy_sock_ep(remote, &td_session);
+
+    ssize_t ret = dtls_connect(tdsec->td_context, &td_session);
+    if (ret <= 0) {
+        DEBUG("tdsec: connect result: %d\n", ret);
+        return ret;
+    }
+
+    dtls_peer_t *peer = dtls_get_peer(tdsec->td_context, &td_session);
+    if (!peer) {
+        DEBUG("tdsec: can't get peer\n");
+        return -1;
+    }
+
+    ret = 1;
+    /*
+    int elapsed = 0;
+    while (elapsed < 5000000) {
+        if (dtls_peer_state(peer) == DTLS_STATE_CONNECTED) {
+            ret = 1;
+            break;
+        }
+        xtimer_usleep(500000);
+        elapsed += 500000;
+    }
+    if (ret < 1) {
+        DEBUG("tdsec: not connected\n");
+    }
+    */
+    return ret;
+}
+
+ssize_t tdsec_read(tdsec_ref_t *tdsec, uint8_t *buf, size_t len, 
+                   const sock_udp_ep_t *remote)
+{
+    session_t td_session;
+    _copy_sock_ep(remote, &td_session);
 
     int res = dtls_handle_message(tdsec->td_context, &td_session, buf, len);
     return res;
@@ -175,10 +219,11 @@ void tdsec_init(void)
 #ifdef TINYDTLS_LOG_LVL
     dtls_set_log_level(TINYDTLS_LOG_LVL);
 #endif
-
+#ifdef DTLS_PSK
     /* finish initializing PSK params */
     for (uint8_t i = 0; i < TDSEC_PSK_PARAMS_NUMOF; i++) {
         tdsec_psk_params[i].id_len = strlen(tdsec_psk_params[i].client_id);
         tdsec_psk_params[i].key_len = strlen(tdsec_psk_params[i].key);
     }
+#endif
 }

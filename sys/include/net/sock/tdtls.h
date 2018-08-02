@@ -82,10 +82,20 @@ int tdsec_create(tdsec_ref_t *tdsec, sock_udp_t *sock,
                  tdsec_recv_handler_t recv_handler);
 
 /**
+ * @brief   Establish a DTLS connection/session with a remote endpoint.
+ *
+ * Waits 5 seconds for connection.
+ *
+ * @return >= 0 on success
+ * @return <= 0 on failure
+ */
+ssize_t tdsec_connect(tdsec_ref_t *tdsec, const sock_udp_ep_t *remote);
+
+/**
  * @brief   Decrypts and reads a message from a remote peer.
  */
 ssize_t tdsec_read(tdsec_ref_t *tdsec, uint8_t *buf, size_t len,
-                   tdsec_endpoint_t *td_ep);
+                   const sock_udp_ep_t *remote);
 
 /**
  * @brief   Encrypts and sends a message to a remote peer.
