@@ -192,7 +192,7 @@ static void *_event_loop(void *arg)
          * application data received. */
         tdsec_read(&_tdsec, buf, sizeof(buf), &remote);
 #else
-        _read_msg(_sock, buf, res, &remote);
+        _read_msg(&_sock, buf, res, &remote);
 #endif
     }
 
@@ -908,7 +908,9 @@ size_t gcoap_req_send2(const uint8_t *buf, size_t len,
 #ifdef MODULE_SOCK_TDTLS
     ssize_t res = tdsec_connect(&_tdsec, remote);
     if (res >= 0) {
-        tdsec_send(&_tdsec, buf, len, remote);
+        /* tdsec_send(&_tdsec, buf, len, remote); */
+        /* gcoap thread terminates if this function continues to end */
+        return 0;
     } else {
         DEBUG("gcoap: tinydtls connect failed\n");
     }
