@@ -122,6 +122,18 @@ static int _send_to_remote(dtls_context_t *ctx, session_t *session,
     sock_udp_ep_t sock_remote;
     _copy_tdsec_ep(session, &sock_remote);
 
+   if (ENABLE_DEBUG) {
+        printf("(%s): Sending DTLS record to [", __func__);
+        /*
+        ipv6_addr_print(&session->addr);
+        printf("]:%u (netif: %i)", session->port, session->ifindex);
+        */
+        ipv6_addr_print((ipv6_addr_t *)sock_remote.addr.ipv6);
+        printf("]:%u (netif: %i)", sock_remote.port, sock_remote.netif);
+        printf(" Size of packet:%zu\n", len);
+    }
+
+
     tdsec_ref_t *tdsec = (tdsec_ref_t *)dtls_get_app_data(ctx);
 
     ssize_t ret = sock_udp_send(tdsec->sock, data, len, &sock_remote);
@@ -135,16 +147,16 @@ static void _copy_sock_ep(const sock_udp_ep_t *remote, session_t *session) {
     session->size = sizeof(remote->addr.ipv6) + sizeof(remote->port);
     memcpy(session->addr.u8, remote->addr.ipv6, sizeof(remote->addr.ipv6));
     session->port = remote->port;
-    /* session->ifindex = (uint16_t)gnrc_netif_iter(NULL)->pid; */
-    session->ifindex = SOCK_ADDR_ANY_NETIF;
+    session->ifindex = (uint16_t)gnrc_netif_iter(NULL)->pid;
+    /* session->ifindex = SOCK_ADDR_ANY_NETIF; */
 }
 
 static void _copy_tdsec_ep(const session_t *session, sock_udp_ep_t *remote) {
     remote->family = AF_INET6;
     memcpy(remote->addr.ipv6, session->addr.u8, sizeof(session->addr.u8));
     remote->port = session->port;
-    /* remote->netif = (uint16_t)gnrc_netif_iter(NULL)->pid; */
-    remote->netif = SOCK_ADDR_ANY_NETIF;
+    remote->netif = (uint16_t)gnrc_netif_iter(NULL)->pid;
+    /* remote->netif = SOCK_ADDR_ANY_NETIF; */
 }
 
 int tdsec_create(tdsec_ref_t *tdsec, sock_udp_t *sock,
@@ -207,6 +219,17 @@ ssize_t tdsec_read(tdsec_ref_t *tdsec, uint8_t *buf, size_t len,
 ssize_t tdsec_send(tdsec_ref_t *tdsec, const void *data, size_t len,
                    const sock_udp_ep_t *remote)
 {
+    if (ENABLE_DEBUG) {
+        printf("(%s): Sending DTLS record to [", __func__);
+        /*
+        ipv6_addr_print(&session->addr);
+        printf("]:%u (netif: %i)", session->port, session->ifindex);
+        */
+        ipv6_addr_print((ipv6_addr_t *)remote->addr.ipv6);
+        printf("]:%u (netif: %i)", remote->port, remote->netif);
+        printf(" Size of packet:%zu\n", len);
+    }
+
     session_t session;
     _copy_sock_ep(remote, &session);
 
