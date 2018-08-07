@@ -12,6 +12,36 @@
  *
  * @brief       Simple tinydtls based DTLS adapter for sock
  *
+ * tdsec provides a simple bridge for sock based communication to use tinydtls
+ * for DTLS security. tdsec relies on tinydtls as much as possible to manage
+ * the state and protocol for DTLS communication.
+ *
+ * For both server and client operation, RIOT automatically initializes the
+ * library with tdsec_init() in the auto_init module.
+ *
+ * ## Server Operation
+ *
+ * A server application executes the following steps:
+ *
+ * # tdsec_create() to create a tdsec reference object, which maintains the
+ * connecting attributes between sock and tinydtls. All other uses of the
+ * library must provide this object as a parameter. One of these parameters
+ * is a tdsec_recv_handler_t callback function for the received, decrypted
+ * message from a client.
+ *
+ * # sock_udp_recv() to wait on a DTLS handshake message from a remote client,
+ * or an encrypted message once the handshake has completed
+ *
+ * # tdsec_read() to process the received message. Behind the scenes, tinydtls
+ * may ask to send messages to the client to complete the handshake. tinydtls
+ * makes these requests via a callback, for which tdsec calls sock_udp_send().
+ * Eventually tdsec calls the recv callback function, described above with
+ * tdsec_create(), with the decrypted data.
+ *
+ * ## Client Operation
+ *
+ * A client application executes the following steps.
+ *
  * @{
  *
  * @file
