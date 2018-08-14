@@ -170,7 +170,7 @@ static void *_event_loop(void *arg)
 
         sock_udp_ep_t remote;
         uint8_t open_reqs = gcoap_op_state();
-        /* We expect a -EINTR response here when unlimited waiting (SOCK_NO_TIMEOUT)
+        /* We expect a -EINVAL response here when unlimited waiting (SOCK_NO_TIMEOUT)
          * is interrupted when sending a message in gcoap_req_send2(). While a
          * request is outstanding, sock_udp_recv() is called here with limited
          * waiting so the request's timeout can be handled in a timely manner in
@@ -179,21 +179,21 @@ static void *_event_loop(void *arg)
                             open_reqs > 0 ? GCOAP_RECV_TIMEOUT : SOCK_NO_TIMEOUT,
                             &remote);
         if (res <= 0) {
-#if ENABLE_DEBUG
-            if (res < 0 && res != -ETIMEDOUT) {
-                DEBUG("gcoap: udp recv failure: %d\n", res);
+            if ((res != -ETIMEDOUT) && (res != -EINVAL)) {
+                DEBUG("gcoap: udp recv error: %d\n", res);
+                return 0;
             }
-#endif
-            return 0;
         }
+        else {
 #ifdef MODULE_SOCK_TDTLS
-        /* Read encrypted message. buf may contain a handshake or other DTLS
-         * protocol message. tinydtls will call _read_msg() directly when
-         * application data received. */
-        tdsec_read(&_tdsec, buf, sizeof(buf), &remote);
+            /* Read encrypted message. buf may contain a handshake or other DTLS
+             * protocol message. tinydtls will call _read_msg() directly when
+             * application data received. */
+            tdsec_read(&_tdsec, buf, sizeof(buf), &remote);
 #else
-        _read_msg(&_sock, buf, res, &remote);
+            _read_msg(&_sock, buf, res, &remote);
 #endif
+        }
     }
 
     return 0;
@@ -908,11 +908,7 @@ size_t gcoap_req_send2(const uint8_t *buf, size_t len,
 #ifdef MODULE_SOCK_TDTLS
     ssize_t res = tdsec_connect(&_tdsec, remote);
     if (res >= 0) {
-        /* tdsec_send(&_tdsec, buf, len, remote); */
-        /* gcoap thread terminates if this function continues to end */
-        return 0;
-    } else {
-        DEBUG("gcoap: tinydtls connect failed\n");
+        res = tdsec_send(&_tdsec, buf, len, remote);
     }
 #else
     ssize_t res = sock_udp_send(&_sock, buf, len, remote);

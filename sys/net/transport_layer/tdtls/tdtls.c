@@ -162,6 +162,12 @@ static void _copy_tdsec_ep(const session_t *session, sock_udp_ep_t *remote) {
 int tdsec_create(tdsec_ref_t *tdsec, sock_udp_t *sock,
                  tdsec_recv_handler_t recv_handler)
 {
+    if (ENABLE_DEBUG) {
+        printf("tdsec: create context\n");
+        printf("tdsec: DTLS_DEFAULT_MAX_RETRANSMIT %d\n",
+                DTLS_DEFAULT_MAX_RETRANSMIT);
+    }
+
     tdsec->sock = sock;
     tdsec->td_context = dtls_new_context(tdsec);
     tdsec->recv_handler = recv_handler;
@@ -188,8 +194,6 @@ ssize_t tdsec_connect(tdsec_ref_t *tdsec, const sock_udp_ep_t *remote)
         return -1;
     }
 
-    ret = 1;
-    /*
     int elapsed = 0;
     while (elapsed < 5000000) {
         if (dtls_peer_state(peer) == DTLS_STATE_CONNECTED) {
@@ -199,10 +203,8 @@ ssize_t tdsec_connect(tdsec_ref_t *tdsec, const sock_udp_ep_t *remote)
         xtimer_usleep(500000);
         elapsed += 500000;
     }
-    if (ret < 1) {
-        DEBUG("tdsec: not connected\n");
-    }
-    */
+
+    DEBUG("tdsec: connected? %s\n", ret < 1 ? "No" : "Yes!");
     return ret;
 }
 
@@ -228,6 +230,10 @@ ssize_t tdsec_send(tdsec_ref_t *tdsec, const void *data, size_t len,
         ipv6_addr_print((ipv6_addr_t *)remote->addr.ipv6);
         printf("]:%u (netif: %i)", remote->port, remote->netif);
         printf(" Size of packet:%zu\n", len);
+    }
+    if (len > DTLS_MAX_BUF) {
+        DEBUG("tdsec: Exceeded max size of DTLS buffer.");
+        return -1;
     }
 
     session_t session;
