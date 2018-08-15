@@ -136,6 +136,9 @@ endif
 ifneq (,$(filter rdcli_simple,$(USEMODULE)))
     DIRS += net/application_layer/rdcli_simple
 endif
+ifneq (,$(filter sock_tdsec,$(USEMODULE)))
+  DIRS += net/transport_layer/tdsec
+endif
 
 DIRS += $(dir $(wildcard $(addsuffix /Makefile, $(USEMODULE))))
 
