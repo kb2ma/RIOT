@@ -479,6 +479,7 @@ struct gcoap_request_memo {
                                              supports resending message */
     sock_udp_ep_t remote_ep;            /**< Remote endpoint */
     gcoap_resp_handler_t resp_handler;  /**< Callback for the response */
+    void *context;                      /**< ptr to user defined context data */
     xtimer_t response_timer;            /**< Limits wait for response */
     msg_t timeout_msg;                  /**< For response timer */
 };
@@ -572,13 +573,14 @@ static inline ssize_t gcoap_request(coap_pkt_t *pdu, uint8_t *buf, size_t len,
  * @param[in] len           Length of the buffer
  * @param[in] remote        Destination for the packet
  * @param[in] resp_handler  Callback when response received, may be NULL
+ * @param[in] context       User defined context passed to the response handler
  *
  * @return  length of the packet
  * @return  0 if cannot send
  */
 size_t gcoap_req_send2(const uint8_t *buf, size_t len,
                        const sock_udp_ep_t *remote,
-                       gcoap_resp_handler_t resp_handler);
+                       gcoap_resp_handler_t resp_handler, void *context);
 
 /**
  * @brief  Sends a buffer containing a CoAP request to the provided host/port
@@ -590,12 +592,14 @@ size_t gcoap_req_send2(const uint8_t *buf, size_t len,
  * @param[in] addr          Destination for the packet
  * @param[in] port          Port at the destination
  * @param[in] resp_handler  Callback when response received, may be NULL
+ * @param[in] context       User defined context passed to the response handler
  *
  * @return  length of the packet
  * @return  0 if cannot send
  */
-size_t gcoap_req_send(const uint8_t *buf, size_t len, const ipv6_addr_t *addr,
-                      uint16_t port, gcoap_resp_handler_t resp_handler);
+size_t gcoap_req_send(const uint8_t *buf, size_t len,
+                      const ipv6_addr_t *addr, uint16_t port,
+                      gcoap_resp_handler_t resp_handler, void *context);
 
 /**
  * @brief   Initializes a CoAP response packet on a buffer

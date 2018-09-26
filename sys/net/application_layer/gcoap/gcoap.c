@@ -775,8 +775,9 @@ ssize_t gcoap_finish(coap_pkt_t *pdu, size_t payload_len, unsigned format)
     return _finish_pdu(pdu, (uint8_t *)pdu->hdr, len);
 }
 
-size_t gcoap_req_send(const uint8_t *buf, size_t len, const ipv6_addr_t *addr,
-                      uint16_t port, gcoap_resp_handler_t resp_handler)
+size_t gcoap_req_send(const uint8_t *buf, size_t len,
+                      const ipv6_addr_t *addr, uint16_t port,
+                      gcoap_resp_handler_t resp_handler, void *context)
 {
     sock_udp_ep_t remote;
 
@@ -786,12 +787,12 @@ size_t gcoap_req_send(const uint8_t *buf, size_t len, const ipv6_addr_t *addr,
 
     memcpy(&remote.addr.ipv6[0], &addr->u8[0], sizeof(addr->u8));
 
-    return gcoap_req_send2(buf, len, &remote, resp_handler);
+    return gcoap_req_send2(buf, len, &remote, resp_handler, context);
 }
 
 size_t gcoap_req_send2(const uint8_t *buf, size_t len,
                        const sock_udp_ep_t *remote,
-                       gcoap_resp_handler_t resp_handler)
+                       gcoap_resp_handler_t resp_handler, void *context)
 {
     gcoap_request_memo_t *memo = NULL;
     unsigned msg_type  = (*buf & 0x30) >> 4;
@@ -818,6 +819,7 @@ size_t gcoap_req_send2(const uint8_t *buf, size_t len,
         }
 
         memo->resp_handler = resp_handler;
+        memo->context = context;
         memcpy(&memo->remote_ep, remote, sizeof(sock_udp_ep_t));
 
         switch (msg_type) {
