@@ -43,13 +43,13 @@
  * option with the provided value.
  *
  * For a response with additional CoAP options, start by calling
- * coap_build_reply(). Then choose either the minimal API or the struct-based
+ * coap_build_reply(). Then choose either the Buffer API or the Packet
  * API to write the rest of the response. See the instructions in the section
  * _Write Options and Payload_ below.
  *
  * ## Client Operation ##
  *
- * Choose either the minimal API or the struct-based API to write a request.
+ * Choose either the Buffer API or the Packet API to write a request.
  * Follow the instructions in the section _Write Options and Payload_ below.
  *
  * To send the message and await the response, see nanocoap_request() as well
@@ -66,12 +66,12 @@
  *
  * nanocoap provides two APIs for writing CoAP options:
  *
- * - **minimal API** requires only a reference to the buffer for the message.
+ * - **Buffer API** requires only a reference to the buffer for the message.
  * However, the caller must provide the last option number written as well as
  * the buffer position. The caller is primarily responsible for tracking and
  * managing the space remaining in the buffer.
  *
- * - **struct-based API** uses a coap_pkt_t struct to conveniently track each
+ * - **Packet API** uses a coap_pkt_t struct to conveniently track each
  * option as it is written and prepare for any payload. The caller must monitor
  * space remaining in the buffer; however, the API *will not* write past the
  * end of the buffer, and returns -ENOSPC when it is full.
@@ -80,14 +80,14 @@
  * caller must write options in order by option number (see "CoAP option
  * numbers" in [CoAP defines](group__net__coap.html)).
  *
- * ### Minimal API ###
+ * ### Buffer API ###
  *
  * Before starting, ensure the CoAP header has been initialized with
  * coap_build_hdr(). For a response, coap_build_reply() includes a call to
  * coap_build_hdr(). Use the returned length to track the next position in the
  * buffer to write and remaining length.
  *
- * Next, use the functions in the  _Minimal API Options_ section to write each
+ * Next, use the functions in the  _Buffer API Options_ section to write each
  * option. These functions require the position in the buffer to start writing,
  * and return the number of bytes written.
  *
@@ -97,13 +97,13 @@
  * If there is a payload, append a payload marker (0xFF). Then write the
  * payload to within the maximum length remaining in the buffer.
  *
- * ### Struct-based API ###
+ * ### Packet API ###
  *
- * As with the minimal API, first ensure the CoAP header has been initialized
+ * As with the Buffer API, first ensure the CoAP header has been initialized
  * with coap_build_hdr(). Then use coap_pkt_init() to initialize the coap_pkt_t
  * struct.
  *
- * Next, write any options with the functions in the _Struct-based API Options_
+ * Next, write any options with the functions in the _Packet API Options_
  * section. When all options have been added, call coap_opt_finish().
  *
  * @note You must ensure the buffer has enough space remaining to write each
@@ -725,7 +725,7 @@ static inline unsigned coap_szx2size(unsigned szx)
 
 
 /**
- * @name    Functions -- Struct-based Options API
+ * @name    Functions -- Packet Options API
  *
  * Use a coap_pkt_t struct to write PDU contents.
  */
@@ -799,7 +799,7 @@ ssize_t coap_opt_finish(coap_pkt_t *pkt, uint16_t flags);
 
 
 /**
- * @name    Functions -- Minimal API Options
+ * @name    Functions -- Buffer API Options
  *
  * Buffer Write API functions specific to options.
  */
