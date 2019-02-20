@@ -77,7 +77,7 @@ extern "C" {
 
 /**
  * @brief LwM2M server URI to register/bootstrap with
- * 
+ *
  * @note The host part of the URI MUST be a valid IPv6 address. Host names can
  * not be resolved at this time.
  */
@@ -102,7 +102,7 @@ extern "C" {
 /**
  * @brief Specifies if the server at @ref LWM2M_SERVER_URI is a bootstrap server
  * or not.
- * 
+ *
  * Valid values:
  * - 0: Server is not bootstrap
  * - 1: Server is bootstrap
@@ -120,7 +120,7 @@ extern "C" {
 
 /**
  * @brief Device object model.
- * 
+ *
  * @note Defaults to the board name
  */
 #ifndef LWM2M_DEVICE_MODEL
@@ -136,7 +136,7 @@ extern "C" {
 
 /**
  * @brief Device object firmware version
- * 
+ *
  * @note Defaults to the running RIOT version
  */
 #ifndef LWM2M_DEVICE_FW_VERSION
@@ -145,14 +145,14 @@ extern "C" {
 
 /**
  * @brief Device object binding and queue mode
- * 
+ *
  * Valid values are:
  * - U: UDP
  * - UQ: UDP with Queue mode
  * - S: SMS
  * - SQ: SMS with Queue mode
  * - US: UDP and SMS
- * - UQS: UDP with Queue mode and SMS 
+ * - UQS: UDP with Queue mode and SMS
  */
 #ifndef LWM2M_DEVICE_BINDINGS
 #define LWM2M_DEVICE_BINDINGS "U"
@@ -167,7 +167,7 @@ extern "C" {
 
 /**
  * @brief Device object hardware version
- * 
+ *
  * @note Defaults to the board name
  */
 #ifndef LWM2M_DEVICE_HW_VERSION
@@ -176,7 +176,7 @@ extern "C" {
 
 /**
  * @brief Device object software version
- * 
+ *
  * @note Defaults to the running RIOT version
  */
 #ifndef LWM2M_DEVICE_SW_VERSION

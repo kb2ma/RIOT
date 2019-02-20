@@ -54,23 +54,23 @@
 /**
  * @brief Creates a new connection object based on the security instance
  *        represented by @p instance_id.
- * 
+ *
  * @param[in] instance_id ID number of the instance of security object
  * @param[in, out] client_data LWM2M client data
- * 
- * @return Pointer to the new connection 
+ *
+ * @return Pointer to the new connection
  */
 static lwm2m_client_connection_t *_connection_create(int instance_id,
                                         lwm2m_client_data_t *client_data);
 
 /**
  * @brief Gets the URI from an @p instance_id of a @p obj security object
- * 
+ *
  * @param[in] obj security object
  * @param[in] instance_id ID number of the instance of security object
  * @param[out] uri_buffer buffer to place the URI
  * @param[in] buffer_size size of @p uri_buffer
- * 
+ *
  * @return Pointer to the URI in success
  * @return NULL otherwise
  */
@@ -79,12 +79,12 @@ static char *_get_uri_from_security_obj(lwm2m_object_t *obj, int instance_id,
 
 /**
  * @brief Sends data with a specified connection @p conn
- * 
+ *
  * @param[in] conn connection to use to send data
  * @param[in] buffer data to send
  * @param[in] buffer_size size of @p buffer
  * @param[in] client_data LWM2M client data
- * 
+ *
  * @return 0 on success
  * @return -1 otherwise
  */
@@ -317,7 +317,7 @@ static lwm2m_client_connection_t *_connection_create(int instance_id,
             /* get the number of net interfaces */
             unsigned netif_numof = 0;
             netif_t netif = NETIF_INVALID;
-            while ((netif = netif_iter(netif) != NETIF_INVALID)) {
+            while ((netif = netif_iter(netif)) != NETIF_INVALID) {
                     netif_numof++;
             }
 

@@ -33,9 +33,9 @@
 
 /**
  * @brief Determines if there has been a reboot request on the device object
- * 
+ *
  * @note This function is implemented in object_device.c
- * 
+ *
  * @return true Reboot has been requested
  * @return false Reboot has not been requested
  */
@@ -44,7 +44,7 @@ bool lwm2m_device_reboot_requested(void);
 /**
  * @brief Thread with the main loop for receiving packets and stepping the LWM2M
  *        FSM.
- * 
+ *
  * @param arg ignored
  */
 static void *_lwm2m_client_run(void *arg);
@@ -61,7 +61,7 @@ void lwm2m_client_init(lwm2m_client_data_t *client_data)
     lwm2m_memarray_init();
 }
 
-lwm2m_context_t *lwm2m_client_run(lwm2m_client_data_t *client_data, 
+lwm2m_context_t *lwm2m_client_run(lwm2m_client_data_t *client_data,
                                   lwm2m_object_t *obj_list[],
                                   uint16_t obj_numof)
 {
