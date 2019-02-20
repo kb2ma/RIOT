@@ -18,8 +18,8 @@
  * @author      Leandro Lanzieri <leandro.lanzieri@haw-hamburg.de>
  */
 
-#ifndef OBJECTS_LIGHT_CONTROL_H
-#define OBJECTS_LIGHT_CONTROL_H
+#ifndef LWM2M_OBJECTS_LIGHT_CONTROL_H
+#define LWM2M_OBJECTS_LIGHT_CONTROL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -151,5 +151,5 @@ int object_light_control_enable_ontime(lwm2m_context_t *lwm2m_ctx,
 }
 #endif
 
-#endif /* OBJECTS_LIGHT_CONTROL_H */
+#endif /* LWM2M_OBJECTS_LIGHT_CONTROL_H */
 /** @} */

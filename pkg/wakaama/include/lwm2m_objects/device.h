@@ -17,8 +17,8 @@
  * @author      Leandro Lanzieri <leandro.lanzieri@haw-hamburg.de>
  */
 
-#ifndef OBJECTS_DEVICE_H
-#define OBJECTS_DEVICE_H
+#ifndef LWM2M_OBJECTS_DEVICE_H
+#define LWM2M_OBJECTS_DEVICE_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -96,5 +96,5 @@ bool lwm2m_device_reboot_requested(void);
 }
 #endif
 
-#endif /* OBJECTS_DEVICE_H */
+#endif /* LWM2M_OBJECTS_DEVICE_H */
 /** @} */

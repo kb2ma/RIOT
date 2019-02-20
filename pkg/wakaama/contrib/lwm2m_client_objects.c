@@ -92,7 +92,7 @@ lwm2m_object_t *lwm2m_client_get_acc_ctrl_object(
         goto free_out;
     }
 
-    
+
     if (!acc_ctrl_oi_add_ac_val(ret, instance_id, LWM2M_SERVER_ID, 0x1F)) {
         goto free_out;
     }

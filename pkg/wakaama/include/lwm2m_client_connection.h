@@ -55,12 +55,12 @@ extern "C" {
 
 /**
  * @brief Tries to find an existing connection based on a remote UDP endpoint
- * 
+ *
  * @param[in] conn_list connections list to search
  * @param[in] remote remote UDP endpoint to compare to
- * 
+ *
  * @return pointer to the connection in success
- * @return NULL otherwise 
+ * @return NULL otherwise
  */
 lwm2m_client_connection_t *lwm2m_client_connection_find(
                                 lwm2m_client_connection_t *conn_list,
@@ -68,14 +68,14 @@ lwm2m_client_connection_t *lwm2m_client_connection_find(
 
 /**
  * @brief Handles a received packet from a connection
- * 
+ *
  * @param[in] conn connection from where the packet came from
  * @param[in] buffer received packet
  * @param[in] num_bytes size of the packet
  * @param[in] client_data LWM2M client data
- * 
+ *
  * @return 0 on success
- * @return non-zero otherwise 
+ * @return non-zero otherwise
  */
 int lwm2m_connection_handle_packet(lwm2m_client_connection_t *conn,
                                    uint8_t *buffer, size_t num_bytes,
