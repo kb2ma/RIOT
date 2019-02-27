@@ -45,6 +45,28 @@ static void _update_ontime_cb(void *data)
     lwm2m_resource_value_changed(ctx, &uri);
 }
 
+/* sets the on/off state of the light and updates the on_time */
+static void _set_onoff_state(light_ctrl_instance_t *instance, bool state)
+{
+    /* update value only if it is different */
+    if (instance->on_time != state) {
+        instance->light_onoff = state;
+        instance->params->state_handle(instance->params->arg, state);
+        /* when light is turned on update on time */
+        if (instance->light_onoff) {
+            instance->on_time = div_u64_by_1000000(xtimer_usec_from_ticks64(
+                                                        xtimer_now64()));
+            /* set the timer only if the callback is configured */
+            if (instance->cb_arg.ctx) {
+                xtimer_set(&instance->xtimer, 1 * US_PER_SEC);
+            }
+        }
+        else {
+            xtimer_remove(&instance->xtimer);
+        }
+    }
+}
+
 static uint8_t _read(uint16_t instanceId, int *numDataP,
                      lwm2m_data_t **dataArrayP, lwm2m_object_t *objectP)
 {
@@ -159,25 +181,7 @@ static uint8_t _write(uint16_t instanceId, int numData,
                 if ((lwm2m_data_decode_bool(dataArrayP + i, &value) != 1)) {
                     return COAP_400_BAD_REQUEST;
                 }
-                /* update value only if it is different */
-                if (instance->on_time != value) {
-                    instance->light_onoff = value;
-                    instance->params->state_handle(instance->params->arg,
-                                                   value);
-                    /* when light is turned on update on time */
-                    if (instance->light_onoff) {
-                        instance->on_time = div_u64_by_1000000(
-                                                xtimer_usec_from_ticks64(
-                                                    xtimer_now64()));
-                        /* set the timer only if the callback is configured */
-                        if (instance->cb_arg.ctx) {
-                            xtimer_set(&instance->xtimer, 1 * US_PER_SEC);
-                        }
-                    }
-                    else {
-                        xtimer_remove(&instance->xtimer);
-                    }
-                }
+                _set_onoff_state(instance, value);
                 break;
             }
             case LWM2M_LIGHT_CTRL_RES_DIMMER: {
@@ -327,9 +331,9 @@ int object_light_control_toggle(lwm2m_context_t *lwm2m_ctx,
     if (!instance) {
         return -1;
     }
-    instance->light_onoff = !instance->light_onoff;
-    instance->params->state_handle(instance->params->arg,
-                                   instance->light_onoff);
+
+    _set_onoff_state(instance, !instance->light_onoff);
+
     uri.flag = LWM2M_URI_FLAG_OBJECT_ID | LWM2M_URI_FLAG_INSTANCE_ID |
                 LWM2M_URI_FLAG_RESOURCE_ID;
     uri.objectId = object->objID;
