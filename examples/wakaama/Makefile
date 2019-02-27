@@ -41,7 +41,7 @@ USEMODULE += ps
 DEVELHELP ?= 1
 
 # Specific the server URI  address (NOTE: Domain names not supported yet)
-SERVER_URI ?= '"coap://[fe80::60ca:dff:fea1:988a]"'
+SERVER_URI ?= '"coap://[fd00:dead:beef::1]"'
 
 ifneq (,$(SERVER_URI))
   CFLAGS += -DLWM2M_SERVER_URI=$(SERVER_URI)
@@ -56,17 +56,3 @@ USEPKG += wakaama
 CFLAGS += -DLWM2M_CLIENT_MODE -DLWM2M_BOOTSTRAP
 
 include $(RIOTBASE)/Makefile.include
-
-# Set a custom channel if needed
-ifneq (,$(filter cc110x,$(USEMODULE)))          # radio is cc110x sub-GHz
-  DEFAULT_CHANNEL ?= 0
-  CFLAGS += -DCC110X_DEFAULT_CHANNEL=$(DEFAULT_CHANNEL)
-else
-  ifneq (,$(filter at86rf212b,$(USEMODULE)))    # radio is IEEE 802.15.4 sub-GHz
-    DEFAULT_CHANNEL ?= 5
-    CFLAGS += -DIEEE802154_DEFAULT_SUBGHZ_CHANNEL=$(DEFAULT_CHANNEL)
-  else                                          # radio is IEEE 802.15.4 2.4 GHz
-    DEFAULT_CHANNEL ?= 26
-    CFLAGS += -DIEEE802154_DEFAULT_CHANNEL=$(DEFAULT_CHANNEL)
-  endif
-endif
