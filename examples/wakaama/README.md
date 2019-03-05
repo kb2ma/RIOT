@@ -41,6 +41,9 @@ INFO LeshanServerDemo - Web server started at http://0.0.0.0:8080/.
 LWM2M provides a bootstrapping mechanism to provide the clients with information
 to register to one or more servers. To test this mechanism both the previous server and a bootstrap server should be running. Eclipse Leshan also provides a bootstrap server demo.
 
+By default the bootstrap server option is disabled, it can be enabled by setting
+`LWM2M_SERVER_IS_BOOTSTRAP` in `sys/net/lwm2m.h` to 1.
+
 To run the bootstrap server, make sure that the ports it uses are different
 from the ones of previous server (default are 5683 for CoAP, 5684 for CoAPs,
 and 8080 for the webserver), and that it corresponds to the one set in
@@ -71,10 +74,20 @@ The address set in `sys/net/lwm2m.h` as `LWM2M_SERVER_URI` should be reachable
 from the node, e.g. either running on native with a tap interface or as a mote
 connected to a
 [border router](https://github.com/RIOT-OS/RIOT/tree/master/examples/gnrc_border_router).
+
 Also, if a bootstrap server is being used the option `LWM2M_SERVER_IS_BOOTSTRAP`
 should be set to 1.
 
+The server URI for the example is being defined using the variable `SERVER_URI`
+in the Makefile, and can be changed when compiling.
+
 #### Compile and run
+For debugging purposes there are two types of messages that can be enabled:
+- The lwm2m client adaption debug can be enabled by setting `ENABLE_DEBUG` in
+  `lwm2m_client.c` to 1
+- The wakaama internal logging can be enabled by adding `LWM2M_WITH_LOGS` to the
+  CFLAGS (`CFLAGS += -DLWM2M_WITH_LOGS`)
+
 To compile run:
 
 ```shell
