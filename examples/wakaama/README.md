@@ -42,12 +42,12 @@ LWM2M provides a bootstrapping mechanism to provide the clients with information
 to register to one or more servers. To test this mechanism both the previous server and a bootstrap server should be running. Eclipse Leshan also provides a bootstrap server demo.
 
 By default the bootstrap server option is disabled, it can be enabled by setting
-`LWM2M_SERVER_IS_BOOTSTRAP` in `sys/net/lwm2m.h` to 1.
+`LWM2M_SERVER_IS_BOOTSTRAP` in `lwm2m.h` to 1.
 
 To run the bootstrap server, make sure that the ports it uses are different
 from the ones of previous server (default are 5683 for CoAP, 5684 for CoAPs,
 and 8080 for the webserver), and that it corresponds to the one set in
-`sys/net/lwm2m.h` as `LWM2M_BSSERVER_PORT`:
+`lwm2m.h` as `LWM2M_BSSERVER_PORT`:
 ```shell
 # download demo
 wget https://hudson.eclipse.org/leshan/job/leshan/lastSuccessfulBuild/artifact/leshan-bsserver-demo.jar
@@ -65,12 +65,12 @@ java -jar ./leshan-bsserver-demo.jar --coapport ${BS_COAPPORT} \
 To set up the configuration of the node and the server:
 1. Click the `Add new client bootstrap configuration` button.
 2. Fill in the name of the device, it **should** match the one set in
-   `sys/net/lwm2m.h` as `LWM2M_DEVICE_NAME`.
+   `lwm2m.h` as `LWM2M_DEVICE_NAME`.
 3. Using the `LWM2M Server` tab enter the address where the LWM2M server is
    listening. For now only `No security` mode can be used.
 
 ### Running the client
-The address set in `sys/net/lwm2m.h` as `LWM2M_SERVER_URI` should be reachable
+The address set in `lwm2m.h` as `LWM2M_SERVER_URI` should be reachable
 from the node, e.g. either running on native with a tap interface or as a mote
 connected to a
 [border router](https://github.com/RIOT-OS/RIOT/tree/master/examples/gnrc_border_router).
