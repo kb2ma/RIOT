@@ -255,11 +255,13 @@ static lwm2m_client_connection_t *_connection_create(int instance_id,
     /* parse the URI in the form "coaps://[host]:port" */
     if (!strncmp(uri, SCHEME_COAPS, strlen(SCHEME_COAPS))) {
         host = uri + strlen(SCHEME_COAPS);
-        default_port = LWM2M_DTLS_PORT;
+        default_port = (LWM2M_SERVER_IS_BOOTSTRAP && !instance_id) ?
+                            LWM2M_BSSERVER_PORT : LWM2M_DTLS_PORT;
     }
     else if (!strncmp(uri, SCHEME_COAP, strlen(SCHEME_COAP))) {
         host = uri + strlen(SCHEME_COAP);
-        default_port = LWM2M_STANDARD_PORT;
+        default_port = (LWM2M_SERVER_IS_BOOTSTRAP && !instance_id) ?
+                            LWM2M_BSSERVER_PORT : LWM2M_STANDARD_PORT;
     }
     else {
         DEBUG("[_connection_create] Invalid protocol in server URI\n");
