@@ -89,7 +89,8 @@ static int _read(struct dtls_context_t *ctx, session_t *session, uint8_t *buf,
         msg.content.value = -ENOBUFS;
     }
     else {
-        memcpy(sock->buf, buf, len);
+        /* memmove instead of memcpy because memory may overlap */
+        memmove(sock->buf, buf, len);
         msg.content.value = len;
     }
     mbox_put(&sock->mbox, &msg);
