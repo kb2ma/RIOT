@@ -169,19 +169,6 @@ static uint8_t prv_device_read(uint16_t instance_id, int *num_dataP,
                 lwm2m_data_encode_int(0, *data_arrayP + i);
                 result = COAP_205_CONTENT;
                 break;
-            /* Time resources */
-            case LWM2M_RES_TIME:
-            case LWM2M_RES_TIME_OFFSET:
-            case LWM2M_RES_TIME_ZONE:
-            /* What to do with this? */
-            case LWM2M_RES_POWER_SRC:
-            case LWM2M_RES_POWER_VOL:
-            case LWM2M_RES_POWER_AMP:
-            case LWM2M_RES_BATTERY_LEVEL:
-            case LWM2M_RES_MEM_FREE:
-            case LWM2M_RES_BATTERY_STATUS:
-            case LWM2M_RES_MEM_TOTAL:
-            case LWM2M_RES_EXT_DEV_INFO:
             default:
                 result = COAP_404_NOT_FOUND;
         }
