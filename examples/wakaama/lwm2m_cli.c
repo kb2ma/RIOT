@@ -1,6 +1,6 @@
 #include "lwm2m_client.h"
 #include "lwm2m_client_objects.h"
-#include "lwm2m_objects/light_control.h"
+#include "light_control.h"
 
 #define OBJ_COUNT (5)
 

@@ -7,8 +7,7 @@
  */
 
 /**
- * @ingroup     lwm2m_objects
- * @defgroup    lwm2m_objects_light_control Light Control LWM2M object
+ * @ingroup     examples
  * @brief       Light Control object implementation for LWM2M client using
  *              Wakaama
  * @{
