@@ -105,14 +105,14 @@ static uint8_t prv_device_read(uint16_t instance_id, int *num_dataP,
                                lwm2m_object_t *objectP)
 {
     int i;
-    uint8_t result;
+    uint8_t result = COAP_404_NOT_FOUND;
     dev_data_t *data = (dev_data_t *)objectP->userData;
 
     (void)data;
 
     /* Single instance object */
     if (instance_id != 0) {
-        return COAP_404_NOT_FOUND;
+        goto out;
     }
 
     /* Full object requested */
@@ -126,7 +126,8 @@ static uint8_t prv_device_read(uint16_t instance_id, int *num_dataP,
         int cnt = sizeof(resList) / sizeof(uint16_t);
         *data_arrayP = lwm2m_data_new(cnt);
         if (*data_arrayP == NULL) {
-            return COAP_500_INTERNAL_SERVER_ERROR;
+            result = COAP_500_INTERNAL_SERVER_ERROR;
+            goto out;
         }
         *num_dataP = cnt;
         for (i = 0; i < cnt; i++) {
@@ -141,6 +142,7 @@ static uint8_t prv_device_read(uint16_t instance_id, int *num_dataP,
             case LWM2M_RES_FRESET:
             case LWM2M_RES_ERROR_CODE_RESET:
                 result = COAP_405_METHOD_NOT_ALLOWED;
+                goto out;
                 break;
             case LWM2M_RES_ERROR_CODE:
                 /* TODO: Here some error reporting should be implemented. */
