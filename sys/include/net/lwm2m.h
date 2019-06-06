@@ -29,7 +29,8 @@ extern "C" {
 #endif
 
 /**
- * @name    LWM2M default parameters
+ * @defgroup lwm2m_conf     LWM2M compile configurations
+ * @ingroup config
  * @{
  */
 
@@ -182,6 +183,8 @@ extern "C" {
 #ifndef LWM2M_DEVICE_SW_VERSION
 #define LWM2M_DEVICE_SW_VERSION RIOT_VERSION
 #endif
+/** @} */
+
 /** @} */
 
 #ifdef __cplusplus
