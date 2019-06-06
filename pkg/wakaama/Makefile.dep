@@ -1,3 +1,4 @@
 USEMODULE += wakaama_contrib
 USEMODULE += wakaama_object_device
 USEMODULE += memarray
+USEMODULE += xtimer
