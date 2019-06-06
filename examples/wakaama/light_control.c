@@ -7,7 +7,7 @@
  */
 
 /**
- * @ingroup     lwm2m_objects_light_control
+ * @ingroup     examples
  * @{
  * @brief       Light control object implementation for LWM2M client using
  *              Wakaama
@@ -20,7 +20,7 @@
 #include <string.h>
 
 #include "liblwm2m.h"
-#include "lwm2m_objects/light_control.h"
+#include "light_control.h"
 
 #define ENABLE_DEBUG (0)
 #include "debug.h"

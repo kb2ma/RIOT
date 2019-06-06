@@ -1,4 +1,3 @@
 USEMODULE += wakaama_contrib
 USEMODULE += wakaama_object_device
-USEMODULE += wakaama_object_lightctrl
 USEMODULE += memarray
