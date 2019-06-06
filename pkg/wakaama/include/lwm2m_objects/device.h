@@ -62,6 +62,21 @@ enum {
 };
 
 /**
+ * @brief Error codes for the 'Error' resource in the device object of LWM2M
+ */
+enum {
+    LWM2M_DEVICE_ERR_NO_ERR     = 0, /**< No error */
+    LWM2M_DEVICE_ERR_LOW_BATT   = 1, /**< Low battery power */
+    LWM2M_DEVICE_ERR_EXT_OFF    = 2, /**< External power supply off */
+    LWM2M_DEVICE_ERR_GPS_ERR    = 3, /**< GPS module failure */
+    LWM2M_DEVICE_ERR_LOW_SIGNAL = 4, /**< Low received signal strength */
+    LWM2M_DEVICE_ERR_NO_MEM     = 5, /**< Out of memory */
+    LWM2M_DEVICE_ERR_SMS_ERR    = 6, /**< SMS failure */
+    LWM2M_DEVICE_ERR_IP_ERR     = 7, /**< IP connectivity failure */
+    LWM2M_DEVICE_ERR_PERIPH_ERR = 8  /**< Peripheral malfunction */
+};
+
+/**
  * @brief Descriptor of a LWM2M device object instance
  */
 typedef struct {

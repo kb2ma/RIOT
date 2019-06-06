@@ -143,9 +143,8 @@ static uint8_t prv_device_read(uint16_t instance_id, int *num_dataP,
                 result = COAP_405_METHOD_NOT_ALLOWED;
                 break;
             case LWM2M_RES_ERROR_CODE:
-                /* TODO: 0 means 'no error'. Here some error reporting
-                 * should be implemented. */
-                lwm2m_data_encode_int(0, *data_arrayP + i);
+                /* TODO: Here some error reporting should be implemented. */
+                lwm2m_data_encode_int(LWM2M_DEVICE_ERR_NO_ERR, *data_arrayP + i);
                 result = COAP_205_CONTENT;
                 break;
             /* The rest are either static or not defined resources */
