@@ -27,6 +27,19 @@
 /* Set to true if reboot requested. */
 static bool reboot;
 
+/* Lookup table for static resources of device object */
+static const char *_static_resources[] = {
+    [LWM2M_RES_MANUFACTURER] = LWM2M_DEVICE_MANUFACTURER,
+    [LWM2M_RES_MODEL_NO]     = LWM2M_DEVICE_MODEL,
+    [LWM2M_RES_SERIAL]       = LWM2M_DEVICE_SERIAL,
+    [LWM2M_RES_FW_VER]       = LWM2M_DEVICE_FW_VERSION,
+    [LWM2M_RES_BINDINGS]     = LWM2M_DEVICE_BINDINGS,
+    [LWM2M_RES_TYPE]         = LWM2M_DEVICE_TYPE,
+    [LWM2M_RES_HW_VERSION]   = LWM2M_DEVICE_HW_VERSION,
+    [LWM2M_RES_SW_VERSION]   = LWM2M_DEVICE_SW_VERSION,
+    [LWM2M_DEVICE_RESOURCES] = NULL
+};
+
 static uint8_t prv_device_discover(uint16_t instance_id, int *num_dataP,
                                    lwm2m_data_t **data_arrayP,
                                    lwm2m_object_t *objectP)
@@ -129,55 +142,28 @@ static uint8_t prv_device_read(uint16_t instance_id, int *num_dataP,
             case LWM2M_RES_ERROR_CODE_RESET:
                 result = COAP_405_METHOD_NOT_ALLOWED;
                 break;
-            /* Statically defined resources */
-            case LWM2M_RES_MANUFACTURER:
-                lwm2m_data_encode_string(LWM2M_DEVICE_MANUFACTURER,
-                                         *data_arrayP + i);
-                result = COAP_205_CONTENT;
-                break;
-            case LWM2M_RES_MODEL_NO:
-                lwm2m_data_encode_string(LWM2M_DEVICE_MODEL, *data_arrayP + i);
-                result = COAP_205_CONTENT;
-                break;
-            case LWM2M_RES_SERIAL:
-                lwm2m_data_encode_string(LWM2M_DEVICE_SERIAL, *data_arrayP + i);
-                result = COAP_205_CONTENT;
-                break;
-            case LWM2M_RES_FW_VER:
-                lwm2m_data_encode_string(LWM2M_DEVICE_FW_VERSION, *data_arrayP + i);
-                result = COAP_205_CONTENT;
-                break;
-            case LWM2M_RES_HW_VERSION:
-                lwm2m_data_encode_string(LWM2M_DEVICE_HW_VERSION, *data_arrayP + i);
-                result = COAP_205_CONTENT;
-                break;
-            case LWM2M_RES_SW_VERSION:
-                lwm2m_data_encode_string(LWM2M_DEVICE_SW_VERSION, *data_arrayP + i);
-                result = COAP_205_CONTENT;
-                break;
-            case LWM2M_RES_BINDINGS:
-                lwm2m_data_encode_string(LWM2M_DEVICE_BINDINGS, *data_arrayP + i);
-                result = COAP_205_CONTENT;
-                break;
-            case LWM2M_RES_TYPE:
-                lwm2m_data_encode_string(LWM2M_DEVICE_TYPE, *data_arrayP + i);
-                result = COAP_205_CONTENT;
-                break;
-            /* Error code is mandatory */
             case LWM2M_RES_ERROR_CODE:
-                /* TODO: Do this properly */
+                /* TODO: 0 means 'no error'. Here some error reporting
+                 * should be implemented. */
                 lwm2m_data_encode_int(0, *data_arrayP + i);
                 result = COAP_205_CONTENT;
                 break;
+            /* The rest are either static or not defined resources */
             default:
-                result = COAP_404_NOT_FOUND;
-        }
-
-        if (result != COAP_205_CONTENT) {
-            break;
+                if (_static_resources[(*data_arrayP)[i].id]) {
+                    lwm2m_data_encode_string(
+                        _static_resources[(*data_arrayP)[i].id],
+                        *data_arrayP + i);
+                    result = COAP_205_CONTENT;
+                }
+                else {
+                    result = COAP_404_NOT_FOUND;
+                    goto out;
+                }
         }
     }
 
+out:
     return result;
 }
 
@@ -185,52 +171,20 @@ static uint8_t prv_device_write(uint16_t instance_id, int num_data,
                                 lwm2m_data_t *data_array,
                                 lwm2m_object_t *objectP)
 {
-    int i;
-    uint8_t result = COAP_404_NOT_FOUND;
     dev_data_t *data = (dev_data_t *)objectP->userData;
 
     (void)data;
-
     (void)instance_id;
     (void)num_data;
     (void)data_array;
 
-    for (i = 0; i < num_data; i++) {
-        switch (data_array[i].id) {
-            /* Writable */
-            case LWM2M_RES_TIME:
-            case LWM2M_RES_TIME_OFFSET:
-            case LWM2M_RES_TIME_ZONE:
-            /* TODO: Update stuff here. */
-            /* Non-Writable */
-            case LWM2M_RES_MANUFACTURER:
-            case LWM2M_RES_MODEL_NO:
-            case LWM2M_RES_SERIAL:
-            case LWM2M_RES_FW_VER:
-            case LWM2M_RES_REBOOT:
-            case LWM2M_RES_FRESET:
-            case LWM2M_RES_POWER_SRC:
-            case LWM2M_RES_POWER_VOL:
-            case LWM2M_RES_POWER_AMP:
-            case LWM2M_RES_BATTERY_LEVEL:
-            case LWM2M_RES_MEM_FREE:
-            case LWM2M_RES_ERROR_CODE:
-            case LWM2M_RES_ERROR_CODE_RESET:
-            case LWM2M_RES_BINDINGS:
-            case LWM2M_RES_TYPE:
-            case LWM2M_RES_HW_VERSION:
-            case LWM2M_RES_SW_VERSION:
-            case LWM2M_RES_BATTERY_STATUS:
-            case LWM2M_RES_MEM_TOTAL:
-            case LWM2M_RES_EXT_DEV_INFO:
-                result = COAP_405_METHOD_NOT_ALLOWED;
-                break;
-            default:
-                result = COAP_404_NOT_FOUND;
-        }
+    if (data_array[0].id < LWM2M_DEVICE_RESOURCES) {
+        /* for now not writing resources */
+        return COAP_405_METHOD_NOT_ALLOWED;
     }
-
-    return result;
+    else {
+        return COAP_404_NOT_FOUND;
+    }
 }
 
 static uint8_t prv_device_execute(uint16_t instance_id, uint16_t resource_id,

@@ -58,6 +58,7 @@ enum {
     LWM2M_RES_BATTERY_STATUS,
     LWM2M_RES_MEM_TOTAL,        /* kB */
     LWM2M_RES_EXT_DEV_INFO,     /* objlink; multiple */
+    LWM2M_DEVICE_RESOURCES      /* number of resources */
 };
 
 /**
