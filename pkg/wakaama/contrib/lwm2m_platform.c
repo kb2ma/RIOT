@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
+#include "xtimer.h"
 
 #include "net/lwm2m.h"
 #include "lwm2m_memarray.h"
@@ -225,13 +225,7 @@ int lwm2m_strncmp(const char *s1, const char *s2, size_t n)
 
 time_t lwm2m_gettime(void)
 {
-    struct timeval tv;
-
-    if (0 != gettimeofday(&tv, NULL)) {
-        return -1;
-    }
-
-    return tv.tv_sec;
+    return (time_t)(xtimer_now_usec64() / US_PER_SEC);
 }
 
 void lwm2m_printf(const char *format, ...)
