@@ -46,7 +46,7 @@
 #include "lwm2m_client.h"
 #include "lwm2m_client_connection.h"
 
-#define ENABLE_DEBUG    (0)
+#define ENABLE_DEBUG    (1)
 #include "debug.h"
 
 #define URI_LENGTH 256
@@ -92,6 +92,37 @@ static int _connection_send(lwm2m_client_connection_t *conn, uint8_t *buffer,
                             size_t buffer_size,
                             lwm2m_client_data_t *client_data);
 
+/**
+ * @brief Parses the schema of a given URI and sets the default port for the
+ *        found valid schema
+ * @param[in]  uri          URI string to parse
+ * @param[out] port         will point to the default port string
+ * @param[in]  instance_id  instance ID of the connection
+ *
+ * @return pointer to the character after the schema, if found
+ * @return NULL if no valid schema found
+ */
+static char *_parse_schema(char *uri, char **port, int instance_id);
+
+/**
+ * @brief Parses the host and the port part after the schema
+ *
+ * @param[in, out] host             pointer to the beginning of the host
+ * @param[out]     port             pointer to store the position of the port
+ * @param[in]      default_port     default port
+ */
+static void _parse_host_and_port(char **host, char **port, char *default_port);
+
+/**
+ * @brief Tries to find an interface in the host string. If not, it will check
+ *        if there only exists one interface, and will use it
+ * @param[in]  host         host string
+ * @param[out] iface        pointer where to store the interface
+ *
+ * @return  0 on success
+ * @return -1 otherwise
+ */
+static int _get_interface(char *host, uint16_t *iface);
 
 void *lwm2m_connect_server(uint16_t sec_obj_inst_id, void *user_data)
 {
@@ -229,15 +260,83 @@ static int _connection_send(lwm2m_client_connection_t *conn, uint8_t *buffer,
     return 0;
 }
 
+static char *_parse_schema(char *uri, char **port, int instance_id)
+{
+    char *host = NULL;
+    if (!uri) {
+        DEBUG("[_parse_schema] Could not get URI of instance\n");
+        goto out;
+    }
+
+    /* parse the URI in the form "coaps://[host]:port" */
+    if (!strncmp(uri, SCHEME_COAPS, sizeof(SCHEME_COAPS) - 1)) {
+        host = uri + sizeof(SCHEME_COAPS) - 1;
+        *port = (LWM2M_SERVER_IS_BOOTSTRAP && !instance_id) ?
+                    LWM2M_BSSERVER_PORT : LWM2M_DTLS_PORT;
+    }
+    else if (!strncmp(uri, SCHEME_COAP, sizeof(SCHEME_COAP) - 1)) {
+        host = uri + sizeof(SCHEME_COAP) - 1;
+        *port = (LWM2M_SERVER_IS_BOOTSTRAP && !instance_id) ?
+                    LWM2M_BSSERVER_PORT : LWM2M_STANDARD_PORT;
+    }
+
+out:
+    return host;
+}
+
+static void _parse_host_and_port(char **host, char **port, char *default_port)
+{
+    char *_port = NULL;
+    char *pos = *host;
+
+    if (pos[0] == '[') {
+        (*host)++;
+        pos = strrchr(pos, ']');
+    }
+
+    _port = strrchr(pos, ':');
+    if (!_port) {
+        *pos = '\0';
+        DEBUG("[_parse_port] No port specified, using default\n");
+        _port = default_port;
+    }
+    else {
+        *(_port - 1) = '\0';
+        _port++;
+    }
+    *port = _port;
+}
+
+static int _get_interface(char *host, uint16_t *iface)
+{
+    int _iface = ipv6_addr_split_iface(host);
+    if (_iface < 0) {
+        /* get the number of net interfaces */
+        unsigned netif_numof = 0;
+        netif_t netif = NETIF_INVALID;
+        while ((netif = netif_iter(netif)) != NETIF_INVALID) {
+                netif_numof++;
+        }
+
+        if (netif_numof == 1) {
+            _iface = netif_iter(NETIF_INVALID);
+        }
+        else {
+            DEBUG("[_connection_create] No iface for link-local address\n");
+            return -1;
+        }
+    }
+    *iface = _iface;
+    return 0;
+}
+
 static lwm2m_client_connection_t *_connection_create(int instance_id,
                                         lwm2m_client_data_t *client_data)
 {
     lwm2m_client_connection_t *conn = NULL;
     char *default_port;
     char *host;
-    int iface;
     char *port;
-    char *tmp;
     char *uri;
     char uri_buf[URI_LENGTH + 1];
 
@@ -247,44 +346,14 @@ static lwm2m_client_connection_t *_connection_create(int instance_id,
     uri = _get_uri_from_security_obj(client_data->obj_security, instance_id,
                                      uri_buf, sizeof(uri_buf) - 1);
 
-    if (!uri) {
-        DEBUG("[_connection_create] Could not get URI of instance\n");
-        goto out;
+    host = _parse_schema(uri, &default_port, instance_id);
+    if (!host) {
+        DEBUG("[_connection_create] Could not parse URI schema\n");
+        goto free_out;
     }
 
-    /* parse the URI in the form "coaps://[host]:port" */
-    if (!strncmp(uri, SCHEME_COAPS, strlen(SCHEME_COAPS))) {
-        host = uri + strlen(SCHEME_COAPS);
-        default_port = (LWM2M_SERVER_IS_BOOTSTRAP && !instance_id) ?
-                            LWM2M_BSSERVER_PORT : LWM2M_DTLS_PORT;
-    }
-    else if (!strncmp(uri, SCHEME_COAP, strlen(SCHEME_COAP))) {
-        host = uri + strlen(SCHEME_COAP);
-        default_port = (LWM2M_SERVER_IS_BOOTSTRAP && !instance_id) ?
-                            LWM2M_BSSERVER_PORT : LWM2M_STANDARD_PORT;
-    }
-    else {
-        DEBUG("[_connection_create] Invalid protocol in server URI\n");
-        goto out;
-    }
-
-    tmp = host;
-    if (tmp[0] == '[') {
-        host++;
-        tmp = strrchr(tmp, ']');
-    }
-
-    port = strrchr(tmp, ':');
-    if (!port) {
-        *tmp = '\0';
-        DEBUG("[_connection_create] No port specified, using default\n");
-        port = default_port;
-    }
-    else {
-        *(port - 1) = '\0';
-        port++;
-    }
-    DEBUG("[_connection_create] Creating connection to Host: %s, Port: %s",
+    _parse_host_and_port(&host, &port, default_port);
+    DEBUG("[_connection_create] Creating connection to Host: %s, Port: %s\n",
           host, port);
 
     /* allocate new connection */
@@ -295,10 +364,10 @@ static lwm2m_client_connection_t *_connection_create(int instance_id,
     }
     conn->next = client_data->conn_list;
 
-    conn->remote.port = atoi(port);
     /* configure to any IPv6 */
     conn->remote.family = AF_INET6;
     conn->remote.netif = SOCK_ADDR_ANY_NETIF;
+    conn->remote.port = atoi(port);
 
     if (!ipv6_addr_from_str((ipv6_addr_t *)&conn->remote.addr.ipv6, host)) {
         DEBUG("[_connection_create] IPv6 address malformed\n");
@@ -313,25 +382,9 @@ static lwm2m_client_connection_t *_connection_create(int instance_id,
     /* If the address is a link-local one first check if interface is specified,
      * if not, check the number of interfaces and default to the first if there
      * is only one defined. */
-    if (ipv6_addr_is_link_local((ipv6_addr_t *)&conn->remote.addr.ipv6)) {
-        iface = ipv6_addr_split_iface(host);
-        if (iface < 0) {
-            /* get the number of net interfaces */
-            unsigned netif_numof = 0;
-            netif_t netif = NETIF_INVALID;
-            while ((netif = netif_iter(netif)) != NETIF_INVALID) {
-                    netif_numof++;
-            }
-
-            if (netif_numof == 1) {
-                iface = netif_iter(NETIF_INVALID);
-            }
-            else {
-                DEBUG("[_connection_create] No iface for link-local address\n");
-                goto free_out;
-            }
-        }
-        conn->remote.netif = iface;
+    if (ipv6_addr_is_link_local((ipv6_addr_t *)&conn->remote.addr.ipv6) &&
+        _get_interface(host, &conn->remote.netif)) {
+        goto free_out;
     }
 
     conn->last_send = lwm2m_gettime();
