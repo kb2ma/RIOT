@@ -33,38 +33,42 @@ extern "C" {
 
 /**
  * @brief Resources of the LWM2M device object instance
+ *
+ * @see http://www.openmobilealliance.org/tech/profiles/LWM2M_Device-v1_0_3.xml
  */
-enum {
-    LWM2M_RES_MANUFACTURER = 0,
-    LWM2M_RES_MODEL_NO,
-    LWM2M_RES_SERIAL,
-    LWM2M_RES_FW_VER,
-    LWM2M_RES_REBOOT,           /* exec */
-    LWM2M_RES_FRESET,           /* exec */
-    LWM2M_RES_POWER_SRC,        /* multiplea */
-    LWM2M_RES_POWER_VOL,        /* multiple */
-    LWM2M_RES_POWER_AMP,        /* multiple */
-    LWM2M_RES_BATTERY_LEVEL,    /* 0-100 (percentage) */
-    LWM2M_RES_MEM_FREE,         /* kB */
-    LWM2M_RES_ERROR_CODE,       /* 0-8; multiple */
-    LWM2M_RES_ERROR_CODE_RESET, /* exec */
-    LWM2M_RES_TIME,             /* rw, string */
-    LWM2M_RES_TIME_OFFSET,      /* rw, string; from UTC */
-    LWM2M_RES_TIME_ZONE,        /* rw, string */
-    LWM2M_RES_BINDINGS,
-    LWM2M_RES_TYPE,
-    LWM2M_RES_HW_VERSION,
-    LWM2M_RES_SW_VERSION,
-    LWM2M_RES_BATTERY_STATUS,
-    LWM2M_RES_MEM_TOTAL,        /* kB */
-    LWM2M_RES_EXT_DEV_INFO,     /* objlink; multiple */
-    LWM2M_DEVICE_RESOURCES      /* number of resources */
+enum lwm2m_device_resources {
+    LWM2M_RES_MANUFACTURER = 0, /**< Human readable manufacturer name */
+    LWM2M_RES_MODEL_NO,         /**< Model identifier (manufacturer specified string) */
+    LWM2M_RES_SERIAL,           /**< Serial number */
+    LWM2M_RES_FW_VER,           /**< Current firmware version of the device */
+    LWM2M_RES_REBOOT,           /**< Reboot the device */
+    LWM2M_RES_FRESET,           /**< Perform a factory reset of the device */
+    LWM2M_RES_POWER_SRC,        /**< Available power sources */
+    LWM2M_RES_POWER_VOL,        /**< Present voltage for each power source */
+    LWM2M_RES_POWER_AMP,        /**< Present current for each power source */
+    LWM2M_RES_BATTERY_LEVEL,    /**< Current battery level as a percentage */
+    LWM2M_RES_MEM_FREE,         /**< Estimated current available storage (kB) */
+    LWM2M_RES_ERROR_CODE,       /**< Last error code */
+    LWM2M_RES_ERROR_CODE_RESET, /**< Delete all error code instances */
+    LWM2M_RES_TIME,             /**< Current UNIX time of the client */
+    LWM2M_RES_TIME_OFFSET,      /**< Indicated the UTC offset for the device */
+    LWM2M_RES_TIME_ZONE,        /**< Indicates the time zone of the device */
+    LWM2M_RES_BINDINGS,         /**< Indicates supported bindings and modes on the client */
+    LWM2M_RES_TYPE,             /**< Type of device */
+    LWM2M_RES_HW_VERSION,       /**< Current hardware version of the device */
+    LWM2M_RES_SW_VERSION,       /**< Current software version on the device */
+    LWM2M_RES_BATTERY_STATUS,   /**< Battery status when internal battery is present */
+    LWM2M_RES_MEM_TOTAL,        /**< Total amount of storage space in the device (kB*/
+    LWM2M_RES_EXT_DEV_INFO,     /**< External device object instance */
+    LWM2M_DEVICE_RESOURCES      /**< Number of resources */
 };
 
 /**
- * @brief Error codes for the 'Error' resource in the device object of LWM2M
+ * @brief Error codes for the
+ * @ref lwm2m_device_resources::LWM2M_RES_ERROR_CODE "Error" resource in the
+ * device object of LWM2M
  */
-enum {
+enum lwm2m_device_error_codes {
     LWM2M_DEVICE_ERR_NO_ERR     = 0, /**< No error */
     LWM2M_DEVICE_ERR_LOW_BATT   = 1, /**< Low battery power */
     LWM2M_DEVICE_ERR_EXT_OFF    = 2, /**< External power supply off */
