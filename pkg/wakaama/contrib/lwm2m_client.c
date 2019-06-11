@@ -24,7 +24,7 @@
 #include "net/lwm2m.h"
 #include "liblwm2m.h"
 
-#include "lwm2m_memarray.h"
+#include "lwm2m_platform.h"
 #include "lwm2m_client.h"
 #include "lwm2m_client_connection.h"
 
@@ -57,8 +57,7 @@ static lwm2m_client_data_t *_client_data;
 void lwm2m_client_init(lwm2m_client_data_t *client_data)
 {
     (void)client_data;
-    /* initialize the memarray blocks */
-    lwm2m_memarray_init();
+    lwm2m_platform_init();
 }
 
 lwm2m_context_t *lwm2m_client_run(lwm2m_client_data_t *client_data,

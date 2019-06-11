@@ -16,6 +16,7 @@
 *******************************************************************************/
 /**
  * Copyright (C) 2018 Beduino Master Projekt - University of Bremen
+ *               2019 HAW Hamburg
  * @{
  * @ingroup         pkg_wakaama
  *
@@ -23,6 +24,7 @@
  * @brief           Platform adaption for Wakaama package
  *
  * @author      Christian Manal <manal@uni-bremen.de>
+ * @author      Leandro Lanzieri <leandro.lanzieri@haw-hamburg.de>
  * @}
  */
 
@@ -31,177 +33,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "xtimer.h"
-
+#include "tlsf.h"
 #include "net/lwm2m.h"
-#include "lwm2m_memarray.h"
 
-/*
- * RIOT debugging
- */
-#define ENABLE_DEBUG (0)
-#include "debug.h"
+#include "lwm2m_platform.h"
 
-/*
- * Raise statistics about memory allocation.
- * (Uncomment to enable).
- */
-#if ENABLE_DEBUG == 1
-/* #define DEBUG_MALLOC */
-#endif /* ENABLE_DEBUG */
+static uint32_t _tlsf_heap[LWM2M_TLSF_BUFFER];
+static tlsf_t _tlsf;
 
-#ifndef LWM2M_MEMORY_TRACE
-
-#ifdef DEBUG_MALLOC
-#define max(a, b) ((a) > (b)) ? (a) : (b)
-uint16_t cnt16 = 0;
-uint16_t cnt16_max = 0;
-uint16_t cnt32 = 0;
-uint16_t cnt32_max = 0;
-uint16_t cnt64 = 0;
-uint16_t cnt64_max = 0;
-uint16_t cnt192 = 0;
-uint16_t cnt192_max = 0;
-uint16_t cnt512 = 0;
-uint16_t cnt512_max = 0;
-#endif /* DEBUG_MALLOC */
-
-uint32_t b16_data[4][MAX_16BYTE_BLOCKS];
-uint32_t b32_data[8][MAX_32BYTE_BLOCKS];
-uint32_t b64_data[16][MAX_64BYTE_BLOCKS];
-uint32_t b192_data[48][MAX_192BYTE_BLOCKS];
-uint32_t b512_data[128][MAX_512BYTE_BLOCKS];
-memarray_t b16_storage;
-memarray_t b32_storage;
-memarray_t b64_storage;
-memarray_t b192_storage;
-memarray_t b512_storage;
-
-void lwm2m_memarray_print_stats(void)
+void lwm2m_platform_init(void)
 {
-#ifdef DEBUG_MALLOC
-    DEBUG("cnt16: %"PRIu16"/%u max: %"PRIu16"\n", cnt16, MAX_16BYTE_BLOCKS,
-          cnt16_max);
-    DEBUG("cnt32: %"PRIu16"/%u max: %"PRIu16"\n", cnt32, MAX_32BYTE_BLOCKS,
-          cnt32_max);
-    DEBUG("cnt64: %"PRIu16"/%u max: %"PRIu16"\n", cnt64, MAX_64BYTE_BLOCKS,
-          cnt64_max);
-    DEBUG("cnt192: %"PRIu16"/%u max: %"PRIu16"\n", cnt192, MAX_192BYTE_BLOCKS,
-          cnt192_max);
-    DEBUG("cnt512: %"PRIu16"/%u max: %"PRIu16"\n", cnt512, MAX_512BYTE_BLOCKS,
-          cnt512_max);
-#endif /* DEBUG_MALLOC */
-    return;
-}
-
-void lwm2m_memarray_init(void)
-{
-    memarray_init(&b16_storage, b16_data, 16, MAX_16BYTE_BLOCKS);
-    memarray_init(&b32_storage, b32_data, 32, MAX_32BYTE_BLOCKS);
-    memarray_init(&b64_storage, b64_data, 64, MAX_64BYTE_BLOCKS);
-    memarray_init(&b192_storage, b192_data, 192, MAX_192BYTE_BLOCKS);
-    memarray_init(&b512_storage, b512_data, 512, MAX_512BYTE_BLOCKS);
+    _tlsf = tlsf_create_with_pool(_tlsf_heap, sizeof(_tlsf_heap));
 }
 
 void *lwm2m_malloc(size_t s)
 {
-    if (s <= 16) {
-#ifdef DEBUG_MALLOC
-        cnt16++;
-        cnt16_max = max(cnt16, cnt16_max);
-#endif  /* DEBUG_MALLOC */
-        return memarray_alloc(&b16_storage);
-    }
-    else if (s <= 32) {
-#ifdef DEBUG_MALLOC
-        cnt32++;
-        cnt32_max = max(cnt32, cnt32_max);
-#endif  /* DEBUG_MALLOC */
-        return memarray_alloc(&b32_storage);
-    }
-    else if (s <= 64) {
-#ifdef DEBUG_MALLOC
-        cnt64++;
-        cnt64_max = max(cnt64, cnt64_max);
-#endif  /* DEBUG_MALLOC */
-        return memarray_alloc(&b64_storage);
-    }
-    else if (s <= 192) {
-#ifdef DEBUG_MALLOC
-        cnt192++;
-        cnt192_max = max(cnt192, cnt192_max);
-#endif  /* DEBUG_MALLOC */
-        return memarray_alloc(&b192_storage);
-    }
-    else if (s <= 512) {
-#ifdef DEBUG_MALLOC
-        cnt512++;
-        cnt512_max = max(cnt512, cnt512_max);
-#endif  /* DEBUG_MALLOC */
-        return memarray_alloc(&b512_storage);
-    }
-    DEBUG("lwm2m_malloc(): Requested %u bytes of memory but got no pool for "
-          "this size.\n", s);
-    return NULL;
+    return tlsf_malloc(_tlsf, s);
 }
 
 void lwm2m_free(void *p)
 {
-    uintptr_t start = (uintptr_t)b16_data;
-    uintptr_t end   = start + (uintptr_t)sizeof(b16_data);
-    uintptr_t pi = (uintptr_t)p;
-
-    if (pi >= start && pi < end) {
-#ifdef DEBUG_MALLOC
-        cnt16--;
-#endif  /* DEBUG_MALLOC */
-        memarray_free(&b16_storage, p);
-        return;
-    }
-
-    start = (uintptr_t)b32_data;
-    end   = start + (uintptr_t)sizeof(b32_data);
-    if (pi >= start && pi < end) {
-#ifdef DEBUG_MALLOC
-        cnt32--;
-#endif  /* DEBUG_MALLOC */
-        memarray_free(&b32_storage, p);
-        return;
-    }
-
-    start = (uintptr_t)b64_data;
-    end   = start + (uintptr_t)sizeof(b64_data);
-    if (pi >= start && pi < end) {
-#ifdef DEBUG_MALLOC
-        cnt64--;
-#endif  /* DEBUG_MALLOC */
-        memarray_free(&b64_storage, p);
-        return;
-    }
-
-    start = (uintptr_t)b192_data;
-    end   = start + (uintptr_t)sizeof(b192_data);
-    if (pi >= start && pi < end) {
-#ifdef DEBUG_MALLOC
-        cnt192--;
-#endif  /* DEBUG_MALLOC */
-        memarray_free(&b192_storage, p);
-        return;
-    }
-
-    start = (uintptr_t)b512_data;
-    end   = start + (uintptr_t)sizeof(b512_data);
-    if (pi >= start && pi < end) {
-#ifdef DEBUG_MALLOC
-        cnt512--;
-#endif  /* DEBUG_MALLOC */
-        memarray_free(&b512_storage, p);
-        return;
-    }
-
-    DEBUG("lwm2m_free(): Tried to free memory block that doesn't belong to a "
-          "known pool\n");
-    return;
+    tlsf_free(_tlsf, p);
 }
 
 char *lwm2m_strdup(const char *str)
@@ -215,8 +69,6 @@ char *lwm2m_strdup(const char *str)
 
     return strncpy(new, str, len);
 }
-
-#endif /* LWM2M_MEMORY_TRACE */
 
 int lwm2m_strncmp(const char *s1, const char *s2, size_t n)
 {
