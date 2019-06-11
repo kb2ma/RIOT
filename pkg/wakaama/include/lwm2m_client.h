@@ -40,7 +40,6 @@ extern "C" {
 
 
 #include "liblwm2m.h"
-#include "lwm2m_memarray.h"
 
 /**
  * @brief Connection to server descriptor
