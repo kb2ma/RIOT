@@ -220,6 +220,9 @@
 #include "net/ipv6/addr.h"
 #include "net/sock/udp.h"
 #include "net/nanocoap.h"
+#ifdef MODULE_SOCK_DTLS
+#include "net/sock/dtls.h"
+#endif
 #include "xtimer.h"
 
 #ifdef __cplusplus
@@ -446,6 +449,13 @@ extern "C" {
  */
 #ifndef GCOAP_RESEND_BUFS_MAX
 #define GCOAP_RESEND_BUFS_MAX      (1)
+#endif
+
+/* define a common name for transport layer object, to accommodate security layer */
+#ifdef MODULE_SOCK_DTLS
+typedef sock_dtls_t coap_tl_sock_t;
+#else
+typedef sock_udp_t coap_tl_sock_t;
 #endif
 
 /**
