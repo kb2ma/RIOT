@@ -691,8 +691,9 @@ static void _find_obs_memo_resource(gcoap_observe_memo_t **memo,
 
 kernel_pid_t gcoap_init(void)
 {
+#ifdef MODULE_SOCK_DTLS
     sock_dtls_init();
-
+#endif
     if (_pid != KERNEL_PID_UNDEF) {
         return -EEXIST;
     }

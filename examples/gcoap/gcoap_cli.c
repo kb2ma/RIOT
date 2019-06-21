@@ -38,7 +38,9 @@ static void _resp_handler(unsigned req_state, coap_pkt_t* pdu,
                           sock_udp_ep_t *remote);
 static ssize_t _stats_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
 static ssize_t _riot_board_handler(coap_pkt_t* pdu, uint8_t *buf, size_t len, void *ctx);
+#ifdef MODULE_SOCK_DTLS
 static int _get_psk_params(psk_params_t *psk);
+#endif
 
 /* CoAP resources. Must be sorted by path (ASCII order). */
 static const coap_resource_t _resources[] = {
@@ -55,6 +57,7 @@ static gcoap_listener_t _listener = {
 /* Counts requests sent by CLI. */
 static uint16_t req_count = 0;
 
+#ifdef MODULE_SOCK_DTLS
 static tlsman_handler_t credentials_handler = {
     .get_psk_params = _get_psk_params,
     .get_ecdsa_params = NULL,
@@ -71,6 +74,7 @@ static int _get_psk_params(psk_params_t *psk)
     psk->hint_len = 0;
     return 0;
 }
+#endif
 
 /*
  * Response callback.
@@ -335,6 +339,8 @@ int gcoap_cli_cmd(int argc, char **argv)
 
 void gcoap_cli_init(void)
 {
+#ifdef MODULE_SOCK_DTLS
     tlsman_set_credentials_handler(&credentials_handler);
+#endif
     gcoap_register_listener(&_listener);
 }
