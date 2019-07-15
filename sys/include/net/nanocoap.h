@@ -562,6 +562,24 @@ static inline ssize_t coap_get_uri_query(const coap_pkt_t *pkt, uint8_t *target)
  */
 uint8_t *coap_opt_get_next(const coap_pkt_t *pkt, coap_optpos_t *opt,
                            size_t *value_len, bool init_opt);
+
+/**
+ * @brief   Retrieve the value for an option
+ *
+ * Retrieves the location and length of the option value of any type. Useful for
+ * an opaque option, which essentially is an array of bytes. If more than one
+ * option for a given option number, retrieves the first option. To retrieve
+ * subsequent options, see coap_opt_get_next().
+ *
+ * @param[in]     pkt         packet to read from
+ * @param[in]     opt_num     option number to retrieve
+ * @param[out]    value_pos   start of the option value
+ *
+ * @return        length of option; 0 if the option exists but is empty
+ * @return        -ENOENT if option not found
+ * @return        -EBADMSG if option not valid
+ */
+int coap_opt_get_value(coap_pkt_t *pkt, unsigned opt_num, uint8_t **value_pos);
 /**@}*/
 
 

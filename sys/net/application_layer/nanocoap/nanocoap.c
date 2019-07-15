@@ -204,6 +204,23 @@ static uint8_t *_parse_option(const coap_pkt_t *pkt,
     return pkt_pos;
 }
 
+int coap_opt_get_value(coap_pkt_t *pkt, unsigned opt_num, uint8_t **value_pos)
+{
+    uint8_t *start = coap_find_option(pkt, opt_num);
+    if (start) {
+        uint16_t delta;
+        int len = 0;
+        
+        *value_pos = _parse_option(pkt, start, &delta, &len);
+        if (len < 0) {
+            DEBUG("nanocoap: discarding packet with invalid option length.\n");
+            return -EBADMSG;
+        }
+        return len;
+    }
+    return -ENOENT;
+}
+
 int coap_get_option_uint(coap_pkt_t *pkt, unsigned opt_num, uint32_t *target)
 {
     assert(target);
