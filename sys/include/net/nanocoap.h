@@ -530,6 +530,38 @@ static inline ssize_t coap_get_uri_query(const coap_pkt_t *pkt, uint8_t *target)
     return coap_opt_get_string(pkt, COAP_OPT_URI_QUERY, target,
                                NANOCOAP_URI_MAX, '&');
 }
+
+/**
+ * @brief   Iterate over a packet's options
+ *
+ * To start iteration from the first option, set @p init_opt to true. To start
+ * iteration from a specific option, set @p init_opt to false, set
+ * @p opt->offset to the offset of the desired option from pkt->hdr, and
+ * @p opt->opt_num as required. See below for how @p opt->opt_num is modified.
+ *
+ * With each invocation, this function returns a pointer to the start of the
+ * option value and sets @p value_len to the number of bytes in the value. The
+ * function also sets the attributes for @p opt. The value for @p opt->opt_num
+ * is incremented by the delta in the option number value over the preceding
+ * option in the packet. So, @p opt->opt_num is accurate if iteration started
+ * with the first option. Otherwise, it is useful for identification of repeated
+ * options.
+ *
+ * The end of the options is indicated by a NULL return value. In this case the
+ * attributes for @p opt are unchanged from their input values.
+ *
+ * @param[in]     pkt         packet to read from
+ * @param[in,out] opt         option attributes; read on input if @p init_opt
+ *                            is false
+ * @param[out]    value_len   number of bytes to read in option value
+ * @param[in]     init_opt    true to retrieve first option; false to retrieve
+ *                            option at opt->offset
+ *
+ * @return        pointer to the start of the option value, or NULL if option
+ *                not found
+ */
+uint8_t *coap_opt_get_next(const coap_pkt_t *pkt, coap_optpos_t *opt,
+                           size_t *value_len, bool init_opt);
 /**@}*/
 
 
