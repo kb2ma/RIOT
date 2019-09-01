@@ -795,6 +795,10 @@ ifneq (,$(filter gcoap,$(USEMODULE)))
   USEMODULE += sock_util
 endif
 
+ifneq (,$(filter gcoap_%,$(USEMODULE)))
+  USEMODULE += gcoap
+endif
+
 ifneq (,$(filter luid,$(USEMODULE)))
   FEATURES_OPTIONAL += periph_cpuid
 endif

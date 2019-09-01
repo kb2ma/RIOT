@@ -507,17 +507,6 @@ typedef ssize_t (*gcoap_link_encoder_t)(const coap_resource_t *resource, char *b
                                         size_t maxlen, coap_link_encoder_ctx_t *context);
 
 /**
- * @brief   A modular collection of resources for a server
- */
-typedef struct gcoap_listener {
-    const coap_resource_t *resources;   /**< First element in the array of
-                                         *   resources; must order alphabetically */
-    size_t resources_len;               /**< Length of array */
-    gcoap_link_encoder_t link_encoder;  /**< Writes a link for a resource */
-    struct gcoap_listener *next;        /**< Next listener in list */
-} gcoap_listener_t;
-
-/**
  * @brief   Handler function for a server response, including the state for the
  *          originating request
  *
@@ -558,7 +547,7 @@ typedef struct {
  */
 typedef struct {
     sock_udp_ep_t *observer;            /**< Client endpoint; unused if null */
-    const coap_resource_t *resource;    /**< Entity being observed */
+    coap_resource_t *resource;          /**< Entity being observed */
     uint8_t token[GCOAP_TOKENLEN_MAX];  /**< Client token for notifications */
     unsigned token_len;                 /**< Actual length of token attribute */
 } gcoap_observe_memo_t;
@@ -573,13 +562,6 @@ typedef struct {
  * @return  -EINVAL, if the IP port already is in use.
  */
 kernel_pid_t gcoap_init(void);
-
-/**
- * @brief   Starts listening for resource paths
- *
- * @param[in] listener  Listener containing the resources.
- */
-void gcoap_register_listener(gcoap_listener_t *listener);
 
 /**
  * @brief   Initializes a CoAP request PDU on a buffer.
@@ -752,26 +734,6 @@ size_t gcoap_obs_send(const uint8_t *buf, size_t len,
  * @return  count of unanswered requests
  */
 uint8_t gcoap_op_state(void);
-
-/**
- * @brief   Get the resource list, currently only `CoRE Link Format`
- *          (COAP_FORMAT_LINK) supported
- *
- * If @p buf := NULL, nothing will be written but the size of the resulting
- * resource list is computed and returned.
- *
- * @param[out] buf      output buffer to write resource list into, my be NULL
- * @param[in]  maxlen   length of @p buf, ignored if @p buf is NULL
- * @param[in]  cf       content format to use for the resource list, currently
- *                      only COAP_FORMAT_LINK supported
- *
- * @todo    add support for `JSON CoRE Link Format`
- * @todo    add support for 'CBOR CoRE Link Format`
- *
- * @return  the number of bytes written to @p buf
- * @return  -1 on error
- */
-int gcoap_get_resource_list(void *buf, size_t maxlen, uint8_t cf);
 
 /**
  * @brief   Writes a resource in CoRE Link Format to a provided buffer.
