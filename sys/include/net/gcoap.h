@@ -547,10 +547,19 @@ typedef struct {
  */
 typedef struct {
     sock_udp_ep_t *observer;            /**< Client endpoint; unused if null */
-    coap_resource_t *resource;          /**< Entity being observed */
+    const coap_resource_t *resource;    /**< Entity being observed */
     uint8_t token[GCOAP_TOKENLEN_MAX];  /**< Client token for notifications */
     unsigned token_len;                 /**< Actual length of token attribute */
 } gcoap_observe_memo_t;
+
+/**
+ * @brief   An access envelope for a CoAP resource
+ *
+ * Allows hiding variation in the actual resource implementation
+ */
+typedef struct coap_resrc_handle {
+    const coap_resource_t *resource;   /**< stored resource */
+} coap_resrc_handle_t;
 
 /**
  * @brief   Initializes the gcoap thread and device
@@ -708,7 +717,7 @@ static inline ssize_t gcoap_response(coap_pkt_t *pdu, uint8_t *buf,
  * @return  GCOAP_OBS_INIT_UNUSED if no observer for resource
  */
 int gcoap_obs_init(coap_pkt_t *pdu, uint8_t *buf, size_t len,
-                   const coap_resource_t *resource);
+                   coap_resrc_handle_t *resrc_handle);
 
 /**
  * @brief   Sends a buffer containing a CoAP Observe notification to the
@@ -724,7 +733,7 @@ int gcoap_obs_init(coap_pkt_t *pdu, uint8_t *buf, size_t len,
  * @return  0 if cannot send
  */
 size_t gcoap_obs_send(const uint8_t *buf, size_t len,
-                      const coap_resource_t *resource);
+                      coap_resrc_handle_t *resrc_handle);
 
 /**
  * @brief   Provides important operational statistics

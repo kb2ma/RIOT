@@ -52,16 +52,16 @@ typedef struct gcoap_listener {
 /**
  * @brief   Finds the resource for the URI path in a request
  *
- * @param[in] pdu       Request metadata
- * @param[in] remote    Request sender
- * @param[out] resource Found resource
+ * @param[in] pdu           Request metadata
+ * @param[in] remote        Request sender
+ * @param[out] resrc_handle Found resource
  *
  * @return  GCOAP_RESOURCE_FOUND if the resource was found
  * @return  GCOAP_RESOURCE_WRONG_METHOD if no resource for the request method
  * @return  GCOAP_RESOURCE_NO_PATH if no resource was found for the path
  */
 int gcoap_find_resource(const coap_pkt_t *pdu, const sock_udp_ep_t *remote,
-                        coap_resource_t *resource);
+                        coap_resrc_handle_t *resrc_handle);
 
 /**
  * @brief   Get the resource list, currently only `CoRE Link Format`

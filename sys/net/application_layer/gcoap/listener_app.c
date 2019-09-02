@@ -38,7 +38,7 @@ static gcoap_listener_t _listeners = {
 };
 
 int gcoap_find_resource(const coap_pkt_t *pdu, const sock_udp_ep_t *remote,
-                        coap_resource_t *resource)
+                        coap_resrc_handle_t *resrc_handle)
 {
     (void)remote;
     int ret = GCOAP_RESOURCE_NO_PATH;
@@ -73,10 +73,7 @@ int gcoap_find_resource(const coap_pkt_t *pdu, const sock_udp_ep_t *remote,
                     continue;
                 }
 
-                resource->path = lresource->path;
-                resource->methods = lresource->methods;
-                resource->handler = lresource->handler;
-                resource->context = lresource->context;
+                resrc_handle->resource = lresource;
                 return GCOAP_RESOURCE_FOUND;
             }
         }

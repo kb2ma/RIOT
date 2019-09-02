@@ -46,7 +46,7 @@ static int _find_observer(sock_udp_ep_t **observer, sock_udp_ep_t *remote);
 static int _find_obs_memo(gcoap_observe_memo_t **memo, sock_udp_ep_t *remote,
                                                        coap_pkt_t *pdu);
 static void _find_obs_memo_resource(gcoap_observe_memo_t **memo,
-                                   coap_resource_t *resource);
+                                    coap_resrc_handle_t *resrc_handle);
 
 /* Internal variables */
 
@@ -253,19 +253,19 @@ static void _listen(sock_udp_t *sock)
 static size_t _handle_req(coap_pkt_t *pdu, uint8_t *buf, size_t len,
                                                          sock_udp_ep_t *remote)
 {
-    coap_resource_t resource;
+    coap_resrc_handle_t resrc_handle;
     sock_udp_ep_t *observer             = NULL;
     gcoap_observe_memo_t *memo          = NULL;
     gcoap_observe_memo_t *resource_memo = NULL;
 
-    switch (gcoap_find_resource(pdu, remote, &resource)) {
+    switch (gcoap_find_resource(pdu, remote, &resrc_handle)) {
         case GCOAP_RESOURCE_WRONG_METHOD:
             return gcoap_response(pdu, buf, len, COAP_CODE_METHOD_NOT_ALLOWED);
         case GCOAP_RESOURCE_NO_PATH:
             return gcoap_response(pdu, buf, len, COAP_CODE_PATH_NOT_FOUND);
         case GCOAP_RESOURCE_FOUND:
             /* find observe registration for resource */
-            _find_obs_memo_resource(&resource_memo, &resource);
+            _find_obs_memo_resource(&resource_memo, &resrc_handle);
             break;
     }
 
@@ -315,7 +315,7 @@ static size_t _handle_req(coap_pkt_t *pdu, uint8_t *buf, size_t len,
         /* finish registration */
         if (memo != NULL) {
             /* resource may be assigned here if it is not already registered */
-            memo->resource = resource;
+            memo->resource = resrc_handle.resource;
             memo->token_len = coap_get_token_len(pdu);
             if (memo->token_len) {
                 memcpy(&memo->token[0], pdu->token, memo->token_len);
@@ -346,7 +346,8 @@ static size_t _handle_req(coap_pkt_t *pdu, uint8_t *buf, size_t len,
         return -1;
     }
 
-    ssize_t pdu_len = resource->handler(pdu, buf, len, resource->context);
+    ssize_t pdu_len = resrc_handle.resource->handler(pdu, buf, len,
+                                                      resrc_handle.resource->context);
     if (pdu_len < 0) {
         pdu_len = gcoap_response(pdu, buf, len,
                                  COAP_CODE_INTERNAL_SERVER_ERROR);
@@ -500,12 +501,12 @@ static int _find_obs_memo(gcoap_observe_memo_t **memo, sock_udp_ep_t *remote,
  * resource[in] -- Resource to match
  */
 static void _find_obs_memo_resource(gcoap_observe_memo_t **memo,
-                                   coap_resource_t *resource)
+                                    coap_resrc_handle_t *resrc_handle)
 {
     *memo = NULL;
     for (int i = 0; i < GCOAP_OBS_REGISTRATIONS_MAX; i++) {
         if (_coap_state.observe_memos[i].observer != NULL
-                && _coap_state.observe_memos[i].resource == resource) {
+                && _coap_state.observe_memos[i].resource == resrc_handle->resource) {
             *memo = &_coap_state.observe_memos[i];
             break;
         }
@@ -743,11 +744,11 @@ int gcoap_resp_init(coap_pkt_t *pdu, uint8_t *buf, size_t len, unsigned code)
 }
 
 int gcoap_obs_init(coap_pkt_t *pdu, uint8_t *buf, size_t len,
-                                                  const coap_resource_t *resource)
+                   coap_resrc_handle_t *resrc_handle)
 {
     gcoap_observe_memo_t *memo = NULL;
 
-    _find_obs_memo_resource(&memo, resource);
+    _find_obs_memo_resource(&memo, resrc_handle);
     if (memo == NULL) {
         /* Unique return value to specify there is not an observer */
         return GCOAP_OBS_INIT_UNUSED;
@@ -774,11 +775,11 @@ int gcoap_obs_init(coap_pkt_t *pdu, uint8_t *buf, size_t len,
 }
 
 size_t gcoap_obs_send(const uint8_t *buf, size_t len,
-                      const coap_resource_t *resource)
+                      coap_resrc_handle_t *resrc_handle)
 {
     gcoap_observe_memo_t *memo = NULL;
 
-    _find_obs_memo_resource(&memo, resource);
+    _find_obs_memo_resource(&memo, resrc_handle);
 
     if (memo) {
         ssize_t bytes = sock_udp_send(&_sock, buf, len, memo->observer);

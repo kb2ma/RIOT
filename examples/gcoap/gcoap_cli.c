@@ -304,15 +304,17 @@ int gcoap_cli_cmd(int argc, char **argv)
             puts("gcoap_cli: msg send failed");
         }
         else {
+            coap_resrc_handle_t resrc_handle;
+            resrc_handle.resource = &_resources[0];
             /* send Observe notification for /cli/stats */
             switch (gcoap_obs_init(&pdu, &buf[0], GCOAP_PDU_BUF_SIZE,
-                    &_resources[0])) {
+                    &resrc_handle)) {
             case GCOAP_OBS_INIT_OK:
                 DEBUG("gcoap_cli: creating /cli/stats notification\n");
                 coap_opt_add_format(&pdu, COAP_FORMAT_TEXT);
                 len = coap_opt_finish(&pdu, COAP_OPT_FINISH_PAYLOAD);
                 len += fmt_u16_dec((char *)pdu.payload, req_count);
-                gcoap_obs_send(&buf[0], len, &_resources[0]);
+                gcoap_obs_send(&buf[0], len, &resrc_handle);
                 break;
             case GCOAP_OBS_INIT_UNUSED:
                 DEBUG("gcoap_cli: no observer for /cli/stats\n");
