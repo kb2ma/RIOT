@@ -46,7 +46,7 @@
 #include "lwm2m_client.h"
 #include "lwm2m_client_connection.h"
 
-#define ENABLE_DEBUG    (1)
+#define ENABLE_DEBUG    (0)
 #include "debug.h"
 
 #define URI_LENGTH 256
