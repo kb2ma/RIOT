@@ -7,12 +7,6 @@ on the node with instances of the following objects:
 - [Server object](http://www.openmobilealliance.org/tech/profiles/LWM2M_Server-v1_0.xml)
 - [Access control object](http://www.openmobilealliance.org/tech/profiles/LWM2M_Access_Control-v1_0_2.xml)
 - [Device object](http://www.openmobilealliance.org/tech/profiles/LWM2M_Device-v1_0_3.xml)
-- [Light control object](http://www.openmobilealliance.org/tech/profiles/lwm2m/3311.xml)
-
-It will create an instance of the Light control object per LED (LED0 and LED1)
-if available. The state of the LED can be changed from the LWM2M server or by
-using a shell command in which case the state of it will be reflected on the
-LWM2M server.
 
 The application is based on the Eclipse Wakaama
 [example client](https://github.com/eclipse/wakaama/tree/master/examples/client)
@@ -95,9 +89,5 @@ BOARD=<board> make clean all flash term
 ```
 
 #### Shell commands
-This application provides two commands realated to the LWM2M client:
 - `lwm2m start`: Starts the LWM2M by configuring the module and registering to
   the server.
-- `lwm2m light <num>`: Toggles the state (ON/OFF resource) of the <num> instance
-  of the light control object. This should toggle the correspondent LED on the
-  board and the change should be reflected in the server.
