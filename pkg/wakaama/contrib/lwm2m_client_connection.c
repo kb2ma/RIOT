@@ -313,13 +313,13 @@ static int _get_interface(char *host, uint16_t *iface)
     if (_iface < 0) {
         /* get the number of net interfaces */
         unsigned netif_numof = 0;
-        netif_t netif = NETIF_INVALID;
-        while ((netif = netif_iter(netif)) != NETIF_INVALID) {
+        netif_t *netif = NULL;
+        while ((netif = netif_iter(netif)) != NULL) {
                 netif_numof++;
         }
 
         if (netif_numof == 1) {
-            _iface = netif_iter(NETIF_INVALID);
+            _iface = (uint16_t)gnrc_netif_iter(NULL)->pid;;
         }
         else {
             DEBUG("[_connection_create] No iface for link-local address\n");
