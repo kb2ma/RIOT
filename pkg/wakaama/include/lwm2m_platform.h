@@ -9,7 +9,7 @@
 /**
  * @ingroup     pkg_wakaama
  * @defgroup    lwm2m_platform Platform adaption for Wakaama package
- * @brief Adaption of Wakaama LWM2M package to RIOT
+ * @brief Adaption of Wakaama LwM2M package to RIOT
  * @{
  * @file
  * @brief Definitions and public API for Wakaama adaption layer
@@ -18,7 +18,7 @@
  */
 
 /**
- * @defgroup lwm2m_platform_conf Wakaama LWM2M platform adaption compile configuration
+ * @defgroup lwm2m_platform_conf Wakaama LwM2M platform adaption compile configuration
  * @ingroup config
  * @{
  */
@@ -38,7 +38,7 @@ extern "C" {
 /** @} */
 
 /**
- * @brief Initializes the platform adaption for Wakaama LWM2M
+ * @brief Initializes the platform adaption for Wakaama LwM2M
  */
 void lwm2m_platform_init(void);
 

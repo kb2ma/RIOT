@@ -1,7 +1,7 @@
-# Wakaama LWM2M example client
+# Wakaama LwM2M example client
 
 This application starts a
-[LWM2M](https://wiki.openmobilealliance.org/display/TOOL/What+is+LwM2M) client
+[LwM2M](https://wiki.openmobilealliance.org/display/TOOL/What+is+LwM2M) client
 on the node with instances of the following objects:
 - [Security object](http://www.openmobilealliance.org/tech/profiles/LWM2M_Security-v1_0.xml)
 - [Server object](http://www.openmobilealliance.org/tech/profiles/LWM2M_Server-v1_0.xml)
@@ -14,8 +14,8 @@ The application is based on the Eclipse Wakaama
 
 ## Usage
 
-### Setting up a LWM2M Test Server
-To test the client a LWM2M server where to register is needed.
+### Setting up a LwM2M Test Server
+To test the client a LwM2M server where to register is needed.
 [Eclipse Leshan](https://github.com/eclipse/leshan) demo is a good option for
 running one locally.
 
@@ -32,7 +32,7 @@ INFO LeshanServerDemo - Web server started at http://0.0.0.0:8080/.
 ```
 
 #### Bootstrap server
-LWM2M provides a bootstrapping mechanism to provide the clients with information
+LwM2M provides a bootstrapping mechanism to provide the clients with information
 to register to one or more servers. To test this mechanism both the previous server and a bootstrap server should be running. Eclipse Leshan also provides a bootstrap server demo.
 
 By default the bootstrap server option is disabled, it can be enabled by setting
@@ -60,7 +60,7 @@ To set up the configuration of the node and the server:
 1. Click the `Add new client bootstrap configuration` button.
 2. Fill in the name of the device, it **should** match the one set in
    `lwm2m.h` as `LWM2M_DEVICE_NAME`.
-3. Using the `LWM2M Server` tab enter the address where the LWM2M server is
+3. Using the `LWM2M Server` tab enter the address where the LwM2M server is
    listening. For now only `No security` mode can be used.
 
 ### Running the client
@@ -89,5 +89,5 @@ BOARD=<board> make clean all flash term
 ```
 
 #### Shell commands
-- `lwm2m start`: Starts the LWM2M by configuring the module and registering to
+- `lwm2m start`: Starts the LwM2M by configuring the module and registering to
   the server.

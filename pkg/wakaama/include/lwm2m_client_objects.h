@@ -10,7 +10,7 @@
  * @ingroup         lwm2m_client
  * @{
  * @brief           Public API and definitions for the helper functions to
- *                  interact with basic objects from a LWM2M client.
+ *                  interact with basic objects from a LwM2M client.
  *
  * @file
  * @author      Leandro Lanzieri <leandro.lanzieri@haw-hamburg.de>
@@ -26,10 +26,10 @@ extern "C" {
 #include "lwm2m_client.h"
 
 /**
- * @brief Creates a LWM2M security object with the default configuration from
+ * @brief Creates a LwM2M security object with the default configuration from
  *        net/lwm2m.h
  *
- * @param[in, out] client_data Pointer to a LWM2M client data descriptor
+ * @param[in, out] client_data Pointer to a LwM2M client data descriptor
  *
  * @return Pointer to the created object in success
  * @return NULL otherwise
@@ -38,10 +38,10 @@ lwm2m_object_t *lwm2m_client_get_security_object(
                         lwm2m_client_data_t *client_data);
 
 /**
- * @brief Creates a LWM2M server object with the default configuration from
+ * @brief Creates a LwM2M server object with the default configuration from
  *        net/lwm2m.h
  *
- * @param[in, out] client_data Pointer to a LWM2M client data descriptor
+ * @param[in, out] client_data Pointer to a LwM2M client data descriptor
  *
  * @return Pointer to the created object
  * @return NULL otherwise
@@ -50,9 +50,9 @@ lwm2m_object_t *lwm2m_client_get_server_object(
                         lwm2m_client_data_t *client_data);
 
 /**
- * @brief Creates a LWM2M device object with the default configuration from
+ * @brief Creates a LwM2M device object with the default configuration from
  *        net/lwm2m.h
- * @param[in, out] client_data Pointer to a LWM2M client data descriptor
+ * @param[in, out] client_data Pointer to a LwM2M client data descriptor
  *
  * @return Pointer to the created object
  * @return NULL otherwise
@@ -61,9 +61,9 @@ lwm2m_object_t *lwm2m_client_get_device_object(
                         lwm2m_client_data_t *client_data);
 
 /**
- * @brief Creates a LWM2M access control object with the default configuration
+ * @brief Creates a LwM2M access control object with the default configuration
  *
- * @param[in] client_data Pointer to a LWM2M client data descriptor
+ * @param[in] client_data Pointer to a LwM2M client data descriptor
  *
  * @return Pointer to the created object
  * @return NULL otherwise

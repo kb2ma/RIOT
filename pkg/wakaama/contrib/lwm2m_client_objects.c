@@ -12,7 +12,7 @@
  *
  * @file
  * @brief       Helper functions to interact with the basic objects provided by
- *              Wakaama from a LWM2M client.
+ *              Wakaama from a LwM2M client.
  *
  * @author      Leandro Lanzieri <leandro.lanzieri@haw-hamburg.de>
  * @}

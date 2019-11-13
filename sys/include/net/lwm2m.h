@@ -8,13 +8,13 @@
  */
 
 /**
- * @defgroup     net_lwm2m LWM2M
+ * @defgroup     net_lwm2m LwM2M
  * @ingroup      net
- * @brief        Lightweight Machine to Machnine (LWM2M) definitions
+ * @brief        Lightweight Machine to Machnine (LwM2M) definitions
  * @{
  *
  * @file
- * @brief       LWM2M header definitions
+ * @brief       LwM2M header definitions
  *
  * @author      Christian Manal <manal@uni-bremen.de>
  * @author      Leandro Lanzieri <leandro.lanzieri@haw-hamburg.de>
@@ -29,48 +29,48 @@ extern "C" {
 #endif
 
 /**
- * @defgroup lwm2m_conf     LWM2M compile configurations
+ * @defgroup lwm2m_conf     LwM2M compile configurations
  * @ingroup config
  * @{
  */
 
 /**
- * @brief CoAP default port of the LWM2M server
+ * @brief CoAP default port of the LwM2M server
  */
 #ifndef LWM2M_STANDARD_PORT
 #define LWM2M_STANDARD_PORT "5683"
 #endif
 
 /**
- * @brief CoAPS default port of the LWM2M server
+ * @brief CoAPS default port of the LwM2M server
  */
 #ifndef LWM2M_DTLS_PORT
 #define LWM2M_DTLS_PORT     "5684"
 #endif
 
 /**
- * @brief CoAP default port of the LWM2M bootstrap server
+ * @brief CoAP default port of the LwM2M bootstrap server
  */
 #ifndef LWM2M_BSSERVER_PORT
 #define LWM2M_BSSERVER_PORT "5685"
 #endif
 
 /**
- * @brief Default port for the local LWM2M instance
+ * @brief Default port for the local LwM2M instance
  */
 #ifndef LWM2M_LOCAL_PORT
 #define LWM2M_LOCAL_PORT    "5683"
 #endif
 
 /**
- * @brief Device name used to register at the LWM2M server
+ * @brief Device name used to register at the LwM2M server
  */
 #ifndef LWM2M_DEVICE_NAME
 #define LWM2M_DEVICE_NAME "testRIOTDevice"
 #endif
 
 /**
- * @brief Lifetime of the device object on the LWM2M server
+ * @brief Lifetime of the device object on the LwM2M server
  */
 #ifndef LWM2M_DEVICE_TTL
 #define LWM2M_DEVICE_TTL 300
@@ -94,7 +94,7 @@ extern "C" {
 #endif
 
 /**
- * @brief Alternate path to place LWM2M resources
+ * @brief Alternate path to place LwM2M resources
  */
 #ifndef LWM2M_ALT_PATH
 #define LWM2M_ALT_PATH  NULL

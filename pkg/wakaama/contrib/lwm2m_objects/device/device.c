@@ -10,7 +10,7 @@
  * @ingroup     lwm2m_objects_device
  *
  * @file
- * @brief       Device object implementation for LWM2M client using Wakaama
+ * @brief       Device object implementation for LwM2M client using Wakaama
  *
  * @author      Christian Manal <manal@uni-bremen.de>
  * @}

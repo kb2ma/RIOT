@@ -8,8 +8,8 @@
 
 /**
  * @ingroup     lwm2m_objects
- * @defgroup    lwm2m_objects_device Device LWM2M object
- * @brief       Device object implementation for LWM2M client using Wakaama
+ * @defgroup    lwm2m_objects_device Device LwM2M object
+ * @brief       Device object implementation for LwM2M client using Wakaama
  * @{
  *
  * @file
@@ -32,7 +32,7 @@ extern "C" {
 #include "net/lwm2m.h"
 
 /**
- * @brief Resources of the LWM2M device object instance
+ * @brief Resources of the LwM2M device object instance
  *
  * @see http://www.openmobilealliance.org/tech/profiles/LWM2M_Device-v1_0_3.xml
  */
@@ -66,7 +66,7 @@ enum lwm2m_device_resources {
 /**
  * @brief Error codes for the
  * @ref lwm2m_device_resources::LWM2M_RES_ERROR_CODE "Error" resource in the
- * device object of LWM2M
+ * device object of LwM2M
  */
 enum lwm2m_device_error_codes {
     LWM2M_DEVICE_ERR_NO_ERR     = 0, /**< No error */
@@ -81,7 +81,7 @@ enum lwm2m_device_error_codes {
 };
 
 /**
- * @brief Descriptor of a LWM2M device object instance
+ * @brief Descriptor of a LwM2M device object instance
  */
 typedef struct {
     uint8_t *power_sources;      /**< types of power sources (0-7) */

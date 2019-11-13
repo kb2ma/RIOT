@@ -28,7 +28,7 @@
 /**
  * @ingroup         lwm2m_client
  * @brief           Public API and definitions of the connection handle for
- *                  LWM2M client implementation using Wakaama
+ *                  LwM2M client implementation using Wakaama
  * @{
  *
  * @file
@@ -72,7 +72,7 @@ lwm2m_client_connection_t *lwm2m_client_connection_find(
  * @param[in] conn connection from where the packet came from
  * @param[in] buffer received packet
  * @param[in] num_bytes size of the packet
- * @param[in] client_data LWM2M client data
+ * @param[in] client_data LwM2M client data
  *
  * @return 0 on success
  * @return non-zero otherwise

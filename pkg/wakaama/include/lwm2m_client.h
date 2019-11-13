@@ -8,11 +8,11 @@
 
 /**
  * @ingroup     pkg_wakaama
- * @defgroup    lwm2m_client LWM2M Client using Wakaama
- * @brief Wakaama adaption to RIOT for implementing a LWM2M client
+ * @defgroup    lwm2m_client LwM2M Client using Wakaama
+ * @brief Wakaama adaption to RIOT for implementing a LwM2M client
  * @{
  * @file
- * @brief Definitions and public API for a LWM2M client using Wakaama
+ * @brief Definitions and public API for a LwM2M client using Wakaama
  *
  * @author      Leandro Lanzieri <leandro.lanzieri@haw-hamburg.de>
  */
@@ -51,15 +51,15 @@ typedef struct lwm2m_client_connection {
 } lwm2m_client_connection_t;
 
 /**
- * @brief LWM2M client descriptor
+ * @brief LwM2M client descriptor
  */
 typedef struct {
     kernel_pid_t pid;              /**< PID of the client thread */
     sock_udp_t sock;               /**< UDP server sock */
     sock_udp_ep_t local_ep;        /**< Local endpoint */
-    lwm2m_context_t *lwm2m_ctx;    /**< LWM2M context */
-    lwm2m_object_t *obj_security;  /**< LWM2M security object */
-    lwm2m_client_connection_t *conn_list; /**< LWM2M connections list */
+    lwm2m_context_t *lwm2m_ctx;    /**< LwM2M context */
+    lwm2m_object_t *obj_security;  /**< LwM2M security object */
+    lwm2m_client_connection_t *conn_list; /**< LwM2M connections list */
 } lwm2m_client_data_t;
 
 /**
@@ -74,7 +74,7 @@ typedef struct {
 #define LWM2M_CLIENT_REBOOT_TIME  (5)
 
 /**
- * @brief Time in seconds to wait until LWM2M is refreshed.
+ * @brief Time in seconds to wait until LwM2M is refreshed.
  *
  * @note This time is used as the timeout for receiving UDP packets and will be
  *       the maximum time to wait between calls to wakaama core.
@@ -82,10 +82,10 @@ typedef struct {
 #define LWM2M_CLIENT_MIN_REFRESH_TIME   (1)
 
 /**
- * @brief Starts a LWM2M client
+ * @brief Starts a LwM2M client
  *
- * @param[in, out] client_data Pointer to a LWM2M client data descriptor
- * @param[in] obj_list List of LWM2M objects to be registered
+ * @param[in, out] client_data Pointer to a LwM2M client data descriptor
+ * @param[in] obj_list List of LwM2M objects to be registered
  * @param[in] obj_numof Number of objects in @p obj_list
  *
  * @return Context of the LwM2M client
@@ -95,21 +95,21 @@ lwm2m_context_t *lwm2m_client_run(lwm2m_client_data_t *client_data,
                                    uint16_t obj_numof);
 
 /**
- * @brief Initializes a LWM2M client
+ * @brief Initializes a LwM2M client
  *
  * @note This functions initializes the memory allocation and is needed before
  *       calling any object creation (i.e. any call to lwm2m_malloc).
  *
- * @param[in] client_data Pointer to a LWM2M client data descriptor
+ * @param[in] client_data Pointer to a LwM2M client data descriptor
  */
 void lwm2m_client_init(lwm2m_client_data_t *client_data);
 
 /**
- * @brief Returns the LWM2M context of a LWM2M client
+ * @brief Returns the LwM2M context of a LwM2M client
  *
- * @param[in] client_data pointer to the LWM2M client descriptor
+ * @param[in] client_data pointer to the LwM2M client descriptor
  *
- * @return Pointer to the LWM2M context
+ * @return Pointer to the LwM2M context
  */
 static inline lwm2m_context_t *lwm2m_client_get_ctx(
                                     lwm2m_client_data_t *client_data)

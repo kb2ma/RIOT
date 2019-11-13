@@ -11,7 +11,7 @@
  * @{
  *
  * @file
- * @brief       Wakaama LWM2M Client CLI support
+ * @brief       Wakaama LwM2M Client CLI support
  *
  * @author      Leandro Lanzieri <leandro.lanzieri@haw-hamburg.de>
  * @}

@@ -31,7 +31,7 @@
  * @ingroup     lwm2m_client
  *
  * @file
- * @brief       Connection handle for LWM2M client implementation using Wakaama
+ * @brief       Connection handle for LwM2M client implementation using Wakaama
  *
  * @author      Christian Manal <manal@uni-bremen.de>
  * @author      Leandro Lanzieri <leandro.lanzieri@haw-hamburg.de>
@@ -56,7 +56,7 @@
  *        represented by @p instance_id.
  *
  * @param[in] instance_id ID number of the instance of security object
- * @param[in, out] client_data LWM2M client data
+ * @param[in, out] client_data LwM2M client data
  *
  * @return Pointer to the new connection
  */
@@ -83,7 +83,7 @@ static char *_get_uri_from_security_obj(lwm2m_object_t *obj, int instance_id,
  * @param[in] conn connection to use to send data
  * @param[in] buffer data to send
  * @param[in] buffer_size size of @p buffer
- * @param[in] client_data LWM2M client data
+ * @param[in] client_data LwM2M client data
  *
  * @return 0 on success
  * @return -1 otherwise

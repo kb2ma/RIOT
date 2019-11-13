@@ -12,7 +12,7 @@
  * @ingroup     lwm2m_client
  *
  * @file
- * @brief       LWM2M client implementation using Wakaama
+ * @brief       LwM2M client implementation using Wakaama
  *
  * @author      Christian Manal <manal@uni-bremen.de>
  * @author      Leandro Lanzieri <leandro.lanzieri@haw-hamburg.de>
@@ -42,7 +42,7 @@
 bool lwm2m_device_reboot_requested(void);
 
 /**
- * @brief Thread with the main loop for receiving packets and stepping the LWM2M
+ * @brief Thread with the main loop for receiving packets and stepping the LwM2M
  *        FSM.
  *
  * @param arg ignored
@@ -77,17 +77,17 @@ lwm2m_context_t *lwm2m_client_run(lwm2m_client_data_t *client_data,
         return NULL;
     }
 
-    /* initiate LWM2M */
+    /* initiate LwM2M */
     _client_data->lwm2m_ctx = lwm2m_init(_client_data);
     if (!_client_data->lwm2m_ctx) {
-        DEBUG("[lwm2m_client_init] Failed to initiate LWM2M\n");
+        DEBUG("[lwm2m_client_init] Failed to initiate LwM2M\n");
         return NULL;
     }
 
     res = lwm2m_configure(_client_data->lwm2m_ctx, LWM2M_DEVICE_NAME, NULL,
                           LWM2M_ALT_PATH, obj_numof, obj_list);
     if (res) {
-        DEBUG("[lwm2m_client_init] Failed to configure LWM2M\n");
+        DEBUG("[lwm2m_client_init] Failed to configure LwM2M\n");
         return NULL;
     }
 
@@ -97,7 +97,7 @@ lwm2m_context_t *lwm2m_client_run(lwm2m_client_data_t *client_data,
                                      THREAD_CREATE_STACKTEST,
                                      _lwm2m_client_run,
                                      NULL,
-                                     "LWM2M client");
+                                     "LwM2M client");
     return _client_data->lwm2m_ctx;
 }
 
