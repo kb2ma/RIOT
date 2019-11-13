@@ -73,21 +73,21 @@ lwm2m_context_t *lwm2m_client_run(lwm2m_client_data_t *client_data,
     /* create sock for UDP server */
     _client_data->local_ep.port = atoi(LWM2M_LOCAL_PORT);
     if (sock_udp_create(&_client_data->sock, &_client_data->local_ep, NULL, 0)) {
-        DEBUG("[lwm2m_client_init] Can't create server socket\n");
+        DEBUG("[lwm2m_client_run] Can't create server socket\n");
         return NULL;
     }
 
     /* initiate LwM2M */
     _client_data->lwm2m_ctx = lwm2m_init(_client_data);
     if (!_client_data->lwm2m_ctx) {
-        DEBUG("[lwm2m_client_init] Failed to initiate LwM2M\n");
+        DEBUG("[lwm2m_client_run] Failed to initiate LwM2M\n");
         return NULL;
     }
 
     res = lwm2m_configure(_client_data->lwm2m_ctx, LWM2M_DEVICE_NAME, NULL,
                           LWM2M_ALT_PATH, obj_numof, obj_list);
     if (res) {
-        DEBUG("[lwm2m_client_init] Failed to configure LwM2M\n");
+        DEBUG("[lwm2m_client_run] Failed to configure LwM2M\n");
         return NULL;
     }
 
@@ -117,12 +117,12 @@ static void *_lwm2m_client_run(void *arg)
             tv_sec = lwm2m_gettime();
 
             if (0 == reboot_time) {
-                DEBUG("reboot requested; rebooting in %u seconds\r\n",
+                DEBUG("reboot requested; rebooting in %u seconds\n",
                         LWM2M_CLIENT_REBOOT_TIME);
                 reboot_time = tv_sec + LWM2M_CLIENT_REBOOT_TIME;
             }
             if (reboot_time < tv_sec) {
-                DEBUG("reboot time expired, rebooting ...");
+                DEBUG("reboot time expired, rebooting ...\n");
                 pm_reboot();
             }
             else {
@@ -142,41 +142,41 @@ static void *_lwm2m_client_run(void *arg)
         DEBUG(" -> State: ");
         switch (_client_data->lwm2m_ctx->state) {
             case STATE_INITIAL:
-                DEBUG("STATE_INITIAL\r\n");
+                DEBUG("STATE_INITIAL\n");
                 break;
             case STATE_BOOTSTRAP_REQUIRED:
-                DEBUG("STATE_BOOTSTRAP_REQUIRED\r\n");
+                DEBUG("STATE_BOOTSTRAP_REQUIRED\n");
                 break;
             case STATE_BOOTSTRAPPING:
-                DEBUG("STATE_BOOTSTRAPPING\r\n");
+                DEBUG("STATE_BOOTSTRAPPING\n");
                 break;
             case STATE_REGISTER_REQUIRED:
-                DEBUG("STATE_REGISTER_REQUIRED\r\n");
+                DEBUG("STATE_REGISTER_REQUIRED\n");
                 break;
             case STATE_REGISTERING:
-                DEBUG("STATE_REGISTERING\r\n");
+                DEBUG("STATE_REGISTERING\n");
                 break;
             case STATE_READY:
-                DEBUG("STATE_READY\ren");
+                DEBUG("STATE_READY\n");
                 if (tv > LWM2M_CLIENT_MIN_REFRESH_TIME) {
                     tv = LWM2M_CLIENT_MIN_REFRESH_TIME;
                 }
                 break;
             default:
-                DEBUG("Unknown...\r\n");
+                DEBUG("Unknown...\n");
                 break;
         }
 
         DEBUG("Waiting for UDP packet on port: %d\n", _client_data->sock.local.port);
         rcv_len = sock_udp_recv(&_client_data->sock, &rcv_buf, sizeof(rcv_buf),
                                 tv * US_PER_SEC, &remote);
-        DEBUG("sock_udp_recv()\r\n");
+        DEBUG("sock_udp_recv()\n");
         if (rcv_len > 0) {
             DEBUG("Finding connection\n");
             lwm2m_client_connection_t *conn = lwm2m_client_connection_find(
                                             _client_data->conn_list, &remote);
             if (conn) {
-                DEBUG("lwm2m_connection_handle_packet(%d)\r\n", rcv_len);
+                DEBUG("lwm2m_connection_handle_packet(%d)\n", rcv_len);
                 int result = lwm2m_connection_handle_packet(conn, rcv_buf,
                                                             rcv_len,
                                                             _client_data);

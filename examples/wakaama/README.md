@@ -77,8 +77,8 @@ in the Makefile, and can be changed when compiling.
 
 #### Compile and run
 For debugging purposes there are two types of messages that can be enabled:
-- The lwm2m client adaption debug can be enabled by setting `ENABLE_DEBUG` in
-  `lwm2m_client.c` to 1
+- The lwm2m client adaptation debug can be enabled by setting `ENABLE_DEBUG` in
+  `lwm2m_client.c` and `lwm2m_client_connection.c` to 1
 - The wakaama internal logging can be enabled by adding `LWM2M_WITH_LOGS` to the
   CFLAGS (`CFLAGS += -DLWM2M_WITH_LOGS`)
 

@@ -10,7 +10,7 @@
 /**
  * @defgroup     net_lwm2m LwM2M
  * @ingroup      net
- * @brief        Lightweight Machine to Machnine (LwM2M) definitions
+ * @brief        Lightweight Machine to Machine (LwM2M) definitions
  * @{
  *
  * @file
