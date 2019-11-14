@@ -39,6 +39,7 @@
  */
 
 #include <stddef.h>
+#include "kernel_defines.h"
 #include "net/lwm2m.h"
 #include "net/netif.h"
 
@@ -271,15 +272,13 @@ static char *_parse_schema(char *uri, char **port, int instance_id)
     /* parse the URI in the form "coaps://[host]:port" */
     if (!strncmp(uri, SCHEME_COAPS, sizeof(SCHEME_COAPS) - 1)) {
         host = uri + sizeof(SCHEME_COAPS) - 1;
-        *port = (LWM2M_SERVER_IS_BOOTSTRAP && !instance_id) ?
-                    LWM2M_BSSERVER_PORT : LWM2M_DTLS_PORT;
     }
     else if (!strncmp(uri, SCHEME_COAP, sizeof(SCHEME_COAP) - 1)) {
         host = uri + sizeof(SCHEME_COAP) - 1;
-        *port = (LWM2M_SERVER_IS_BOOTSTRAP && !instance_id) ?
-                    LWM2M_BSSERVER_PORT : LWM2M_STANDARD_PORT;
     }
 
+    *port = (IS_ACTIVE(LWM2M_BOOTSTRAP) && !instance_id) ?
+                LWM2M_BSSERVER_PORT : LWM2M_STANDARD_PORT;
 out:
     return host;
 }

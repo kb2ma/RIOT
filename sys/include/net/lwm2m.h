@@ -101,15 +101,16 @@ extern "C" {
 #endif
 
 /**
- * @brief Specifies if the server at @ref LWM2M_SERVER_URI is a bootstrap server
- * or not.
+ * @brief Define to 1 to specify that @ref LWM2M_SERVER_URI is a bootstrap server
  *
- * Valid values:
- * - 0: Server is not bootstrap
- * - 1: Server is bootstrap
+ * To define just add it to your `CFLAGS` in your application's Makefile:
+ *
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ {.mk}
+ * CFLAGS += -DLWM2M_BOOTSTRAP=1
+ * ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  */
-#ifndef LWM2M_SERVER_IS_BOOTSTRAP
-#define LWM2M_SERVER_IS_BOOTSTRAP 0
+#ifdef DOXYGEN
+#define LWM2M_BOOTSTRAP
 #endif
 
 /**

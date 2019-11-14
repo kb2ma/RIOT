@@ -18,6 +18,7 @@
  * @}
  */
 
+#include "kernel_defines.h"
 #include "net/lwm2m.h"
 
 #include "lwm2m_client.h"
@@ -50,7 +51,7 @@ lwm2m_object_t *lwm2m_client_get_security_object(
     char *psk_id = NULL;
 
     ret = get_security_object(server_id, server_uri, psk_id, psk_buffer,
-                              psk_len, (LWM2M_SERVER_IS_BOOTSTRAP == 1));
+                              psk_len, IS_ACTIVE(LWM2M_BOOTSTRAP));
 
     client_data->obj_security = ret;
     return ret;

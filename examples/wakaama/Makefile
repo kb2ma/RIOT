@@ -52,7 +52,10 @@ USEPKG += wakaama
 # Uncomment to enable Wakaama debug log
 #CFLAGS += -DLWM2M_WITH_LOGS
 
-# NOTE: Use wakaama in client mode with bootstrapping enabled
-CFLAGS += -DLWM2M_CLIENT_MODE -DLWM2M_BOOTSTRAP
+# Uncomment to indicate that the server is a LwM2M bootstrap server
+# CFLAGS += -DLWM2M_BOOTSTRAP=1
+
+# NOTE: Use wakaama in client mode
+CFLAGS += -DLWM2M_CLIENT_MODE
 
 include $(RIOTBASE)/Makefile.include

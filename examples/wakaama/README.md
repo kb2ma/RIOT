@@ -35,8 +35,8 @@ INFO LeshanServerDemo - Web server started at http://0.0.0.0:8080/.
 LwM2M provides a bootstrapping mechanism to provide the clients with information
 to register to one or more servers. To test this mechanism both the previous server and a bootstrap server should be running. Eclipse Leshan also provides a bootstrap server demo.
 
-By default the bootstrap server option is disabled, it can be enabled by setting
-`LWM2M_SERVER_IS_BOOTSTRAP` in `lwm2m.h` to 1.
+By default the bootstrap server option is disabled, it can be enabled by defining
+`LWM2M_BOOTSTRAP` as 1 (see the Makefile in this application).
 
 To run the bootstrap server, make sure that the ports it uses are different
 from the ones of previous server (default are 5683 for CoAP, 5684 for CoAPs,
@@ -69,8 +69,8 @@ from the node, e.g. either running on native with a tap interface or as a mote
 connected to a
 [border router](https://github.com/RIOT-OS/RIOT/tree/master/examples/gnrc_border_router).
 
-Also, if a bootstrap server is being used the option `LWM2M_SERVER_IS_BOOTSTRAP`
-should be set to 1.
+Also, if a bootstrap server is being used the macro `LWM2M_BOOTSTRAP` should be
+defined as 1.
 
 The server URI for the example is being defined using the variable `SERVER_URI`
 in the Makefile, and can be changed when compiling.
