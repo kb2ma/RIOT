@@ -1,4 +1,4 @@
-MODULE := wakaama_object
+MODULE := wakaama_objects
 
 SUBMODULES = 1
 
