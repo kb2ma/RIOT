@@ -40,6 +40,19 @@ static const char *_static_resources[] = {
     [LWM2M_DEVICE_RESOURCES] = NULL
 };
 
+/*Descriptor of a LwM2M device object instance */
+typedef struct {
+    uint8_t *power_sources;      /**< types of power sources (0-7) */
+    uint16_t *power_voltage;     /**< voltage of power sources in mV */
+    uint16_t *power_current;     /**< current of power sources in mA */
+    uint8_t battery_status;      /**< battery status (0-6) */
+    uint32_t mem_total;          /**< amount of memory on the device in kB */
+    uint16_t(*ext_dev_info)[2];  /**< external devices information */
+    uint8_t ext_dev_info_len;    /**< amount of external devices information */
+    uint8_t error_code[7];       /**< error codes */
+    uint8_t error_code_used;     /**< amount of error codes used */
+} dev_data_t;
+
 static uint8_t prv_device_discover(uint16_t instance_id, int *num_dataP,
                                    lwm2m_data_t **data_arrayP,
                                    lwm2m_object_t *objectP)

@@ -25,7 +25,8 @@
 #include "lwm2m_client_objects.h"
 
 /* These functions are defined by the objects (object_security.c,
- * object_server.c, object_device.c and object_access_control.c) */
+ * object_server.c, and object_access_control.c are implemented by the Wakaama
+ * package. device.c can be found in 'contrib/objects') */
 lwm2m_object_t *get_security_object(int server_id, const char *server_uri,
                                     char *bs_psk_id, char *psk,
                                     uint16_t psk_len, bool is_bootstrap);

@@ -81,21 +81,6 @@ enum lwm2m_device_error_codes {
 };
 
 /**
- * @brief Descriptor of a LwM2M device object instance
- */
-typedef struct {
-    uint8_t *power_sources;      /**< types of power sources (0-7) */
-    uint16_t *power_voltage;     /**< voltage of power sources in mV */
-    uint16_t *power_current;     /**< current of power sources in mA */
-    uint8_t battery_status;      /**< battery status (0-6) */
-    uint32_t mem_total;          /**< amount of memory on the device in kB */
-    uint16_t(*ext_dev_info)[2];  /**< external devices information */
-    uint8_t ext_dev_info_len;    /**< amount of external devices information */
-    uint8_t error_code[7];       /**< error codes */
-    uint8_t error_code_used;     /**< amount of error codes used */
-} dev_data_t;
-
-/**
  * @brief Frees the memory of @p obj device object
  *
  * @param[in] obj pointer to the device object
