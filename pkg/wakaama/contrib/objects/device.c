@@ -22,7 +22,7 @@
 
 #include "liblwm2m.h"
 #include "net/lwm2m.h"
-#include "lwm2m_objects/device.h"
+#include "objects/device.h"
 
 /* Set to true if reboot requested. */
 static bool reboot;
