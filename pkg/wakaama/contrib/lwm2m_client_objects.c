@@ -90,12 +90,13 @@ lwm2m_object_t *lwm2m_client_get_acc_ctrl_object(
         goto out;
     }
 
-    if (!acc_ctrl_obj_add_inst(ret, instance_id, 0, 1, LWM2M_SERVER_ID)) {
+    /* add an instance of access control list for the 'device' object */
+    if (!acc_ctrl_obj_add_inst(ret, instance_id, 3, 0, LWM2M_SERVER_ID)) {
         goto free_out;
     }
 
-
-    if (!acc_ctrl_oi_add_ac_val(ret, instance_id, LWM2M_SERVER_ID, 0x1F)) {
+    /* give Read, Write, Execute and Delete access */
+    if (!acc_ctrl_oi_add_ac_val(ret, instance_id, LWM2M_SERVER_ID, 0x0F)) {
         goto free_out;
     }
 
