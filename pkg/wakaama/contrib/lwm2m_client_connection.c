@@ -118,12 +118,19 @@ static void _parse_host_and_port(char **host, char **port, char *default_port);
  * @brief Tries to find an interface in the host string. If not, it will check
  *        if there only exists one interface, and will use it
  * @param[in]  host         host string
- * @param[out] iface        pointer where to store the interface
  *
- * @return  0 on success
- * @return -1 otherwise
+ * @return  pointer to the interface to use on success
+ * @return  NULL on error
  */
-static int _get_interface(char *host, uint16_t *iface);
+static netif_t *_get_interface(char *host);
+
+/**
+ * @brief Sets a given interface to a given UDP endpoint
+ *
+ * @param[out] ep           UDP endpoint
+ * @param[in]  netif        Network interface to assign
+ */
+static void _set_interface(sock_udp_ep_t *ep, const netif_t *netif);
 
 void *lwm2m_connect_server(uint16_t sec_obj_inst_id, void *user_data)
 {
@@ -306,27 +313,44 @@ static void _parse_host_and_port(char **host, char **port, char *default_port)
     *port = _port;
 }
 
-static int _get_interface(char *host, uint16_t *iface)
+static void _set_interface(sock_udp_ep_t *ep, const netif_t *netif)
 {
-    int _iface = ipv6_addr_split_iface(host);
-    if (_iface < 0) {
+    if (netif == NULL || ep == NULL) {
+        return;
+    }
+
+    /* currently there is no way to assign a network interface to a sock
+     * endpoint by means of a generic API, so we need to check */
+    if (IS_USED(MODULE_GNRC_NETIF)) {
+        const gnrc_netif_t *gnrc_netif = (gnrc_netif_t *)netif;
+        ep->netif = (uint16_t)gnrc_netif->pid;
+    }
+}
+
+static netif_t *_get_interface(char *host)
+{
+    netif_t *netif = NULL;
+    char *iface = ipv6_addr_split_iface(host);
+
+    if (iface == NULL) {
         /* get the number of net interfaces */
         unsigned netif_numof = 0;
-        netif_t netif = NETIF_INVALID;
-        while ((netif = netif_iter(netif)) != NETIF_INVALID) {
+        while ((netif = netif_iter(netif)) != NULL) {
                 netif_numof++;
         }
-
+        /* if we only have one interface use that one */
         if (netif_numof == 1) {
-            _iface = netif_iter(NETIF_INVALID);
+            netif = netif_iter(NULL);
         }
         else {
             DEBUG("[_connection_create] No iface for link-local address\n");
-            return -1;
         }
     }
-    *iface = _iface;
-    return 0;
+    else {
+        netif = netif_get_by_name(iface);
+    }
+
+    return netif;
 }
 
 static lwm2m_client_connection_t *_connection_create(int instance_id,
@@ -381,9 +405,14 @@ static lwm2m_client_connection_t *_connection_create(int instance_id,
     /* If the address is a link-local one first check if interface is specified,
      * if not, check the number of interfaces and default to the first if there
      * is only one defined. */
-    if (ipv6_addr_is_link_local((ipv6_addr_t *)&conn->remote.addr.ipv6) &&
-        _get_interface(host, &conn->remote.netif)) {
-        goto free_out;
+    if (ipv6_addr_is_link_local((ipv6_addr_t *)&conn->remote.addr.ipv6)) {
+        netif_t *netif = _get_interface(host);
+        if (netif == NULL) {
+            goto free_out;
+        }
+        else {
+            _set_interface(&conn->remote, netif);
+        }
     }
 
     conn->last_send = lwm2m_gettime();
