@@ -26,6 +26,21 @@ extern "C" {
 #include "lwm2m_client.h"
 
 /**
+ * @name    Access Control Bits
+ * @brief   Bit definitions for the ACL property of the LwM2M Access Control
+ *          Object.
+ *
+ * @see http://www.openmobilealliance.org/tech/profiles/LWM2M_Access_Control-v1_0_3.xml
+ * @{
+ */
+#define LWM2M_ACC_CTRL_READ        (1 << 0) /**< Read access */
+#define LWM2M_ACC_CTRL_WRITE       (1 << 1) /**< Write access */
+#define LWM2M_ACC_CTRL_EXECUTE     (1 << 2) /**< Execution access */
+#define LWM2M_ACC_CTRL_DELETE      (1 << 3) /**< Deletion access */
+#define LWM2M_ACC_CTRL_CREATE      (1 << 4) /**< Creation access */
+/** @} */
+
+/**
  * @brief Creates a LwM2M security object with the default configuration from
  *        net/lwm2m.h
  *

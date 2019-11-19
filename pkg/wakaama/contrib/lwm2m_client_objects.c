@@ -95,8 +95,10 @@ lwm2m_object_t *lwm2m_client_get_acc_ctrl_object(
         goto free_out;
     }
 
+    const uint16_t bits = LWM2M_ACC_CTRL_READ | LWM2M_ACC_CTRL_WRITE |
+                          LWM2M_ACC_CTRL_EXECUTE;
     /* give Read, Write, Execute and Delete access */
-    if (!acc_ctrl_oi_add_ac_val(ret, instance_id, LWM2M_SERVER_ID, 0x0F)) {
+    if (!acc_ctrl_oi_add_ac_val(ret, instance_id, LWM2M_SERVER_ID, bits)) {
         goto free_out;
     }
 
