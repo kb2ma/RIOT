@@ -24,22 +24,15 @@
 #include "lwm2m_client.h"
 #include "lwm2m_client_objects.h"
 
-/* These functions are defined by the objects (object_security.c,
- * object_server.c, and object_access_control.c are implemented by the Wakaama
- * package. device.c can be found in 'contrib/objects') */
+/* These functions are defined by the objects (object_security.c and
+ * object_server.c are implemented by the Wakaama package. device.c can be
+ * found in 'contrib/objects') */
 lwm2m_object_t *get_security_object(int server_id, const char *server_uri,
                                     char *bs_psk_id, char *psk,
                                     uint16_t psk_len, bool is_bootstrap);
 lwm2m_object_t *get_server_object(int server_id, const char *binding,
                                   int lifetime, bool storing);
 lwm2m_object_t *lwm2m_get_object_device(void);
-lwm2m_object_t *acc_ctrl_create_object(void);
-void acl_ctrl_free_object(lwm2m_object_t * objectP);
-bool acc_ctrl_obj_add_inst(lwm2m_object_t* accCtrlObjP, uint16_t instId,
-                           uint16_t acObjectId, uint16_t acObjInstId,
-                           uint16_t acOwner);
-bool acc_ctrl_oi_add_ac_val(lwm2m_object_t* accCtrlObjP, uint16_t instId,
-                            uint16_t acResId, uint16_t acValue);
 
 lwm2m_object_t *lwm2m_client_get_security_object(
                         lwm2m_client_data_t *client_data)
@@ -77,35 +70,3 @@ lwm2m_object_t *lwm2m_client_get_device_object(
     return lwm2m_get_object_device();
 }
 
-lwm2m_object_t *lwm2m_client_get_acc_ctrl_object(
-                        lwm2m_client_data_t *client_data)
-{
-    (void)client_data;
-    lwm2m_object_t *ret;
-    uint16_t instance_id = 0;
-
-    ret = acc_ctrl_create_object();
-
-    if (!ret) {
-        goto out;
-    }
-
-    /* add an instance of access control list for the 'device' object */
-    if (!acc_ctrl_obj_add_inst(ret, instance_id, 3, 0, LWM2M_SERVER_ID)) {
-        goto free_out;
-    }
-
-    const uint16_t bits = LWM2M_ACC_CTRL_READ | LWM2M_ACC_CTRL_WRITE |
-                          LWM2M_ACC_CTRL_EXECUTE;
-    /* give Read, Write, Execute and Delete access */
-    if (!acc_ctrl_oi_add_ac_val(ret, instance_id, LWM2M_SERVER_ID, bits)) {
-        goto free_out;
-    }
-
-    goto out;
-
-free_out:
-    acl_ctrl_free_object(ret);
-out:
-    return ret;
-}
