@@ -19,6 +19,7 @@
 
 #include "lwm2m_client.h"
 #include "lwm2m_client_objects.h"
+#include "lwm2m_platform.h"
 
 #define OBJ_COUNT (3)
 
@@ -55,7 +56,18 @@ int lwm2m_cli_cmd(int argc, char **argv)
         return 0;
     }
 
+#ifdef DEVELHELP
+    if (!strcmp(argv[1], "mem")) {
+        lwm2m_tlsf_status();
+        return 0;
+    }
+#endif
+
 help_error:
+#ifdef DEVELHELP
+    printf("usage: %s <start|mem>\n", argv[0]);
+#else
     printf("usage: %s <start>\n", argv[0]);
+#endif
     return 1;
 }
