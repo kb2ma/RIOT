@@ -42,6 +42,12 @@ extern "C" {
  */
 void lwm2m_platform_init(void);
 
+#ifdef DEVELHELP
+/**
+ * @brief Provides status of TLSF allocation buffer, for development use.
+ */
+void lwm2m_tlsf_status(void);
+#endif
 
 #ifdef __cplusplus
 }

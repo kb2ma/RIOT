@@ -43,6 +43,23 @@
 static uint32_t _tlsf_heap[LWM2M_TLSF_BUFFER];
 static tlsf_t _tlsf;
 
+typedef struct {
+    unsigned free;          /**< total free size */
+    unsigned used;          /**< total used size */
+} _tlsf_size_container_t;
+
+static void _tlsf_size_walker(void* ptr, size_t size, int used, void* user)
+{
+    printf("\t%p %s size: %u (%p)\n", ptr, used ? "used" : "free", (unsigned int)size, ptr);
+
+    if (used) {
+        ((_tlsf_size_container_t *)user)->used += (unsigned int)size;
+    }
+    else {
+        ((_tlsf_size_container_t *)user)->free += (unsigned int)size;
+    }
+}
+
 void lwm2m_platform_init(void)
 {
     _tlsf = tlsf_create_with_pool(_tlsf_heap, sizeof(_tlsf_heap));
@@ -57,6 +74,17 @@ void lwm2m_free(void *p)
 {
     tlsf_free(_tlsf, p);
 }
+
+#ifdef DEVELHELP
+void lwm2m_tlsf_status(void)
+{
+    puts("\nTLSF usage:");
+    _tlsf_size_container_t sizes = { .free = 0, .used = 0 };
+    tlsf_walk_pool(tlsf_get_pool(_tlsf), _tlsf_size_walker, &sizes);
+    printf("\tTotal free size: %u\n", sizes.free);
+    printf("\tTotal used size: %u\n", sizes.used);
+}
+#endif
 
 char *lwm2m_strdup(const char *str)
 {
