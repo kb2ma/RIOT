@@ -33,7 +33,7 @@ USEMODULE += gnrc_icmpv6_echo
 
 # DTLS configuration
 # Choose which DTLS stack to use
-# USEMODULE += tinydtls_sock_dtls
+USEMODULE += tinydtls_sock_dtls
 # USEMODULE += wolfssl_sock_dtls
 CFLAGS += -DDTLS_PSK
 # CFLAGS += -DDTLS_ECC
@@ -41,7 +41,9 @@ CFLAGS += -DDTLS_PSK
 # CFLAGS += -DDTLS_DEBUG
 # Payload size might be bigger when using DTLS, causing errors not present
 # when using plain CoAP. Uncomment the next line to fix this.
-# CFLAGS += -DGCOAP_PDU_BUF_SIZE=256
+CFLAGS += -DGCOAP_PDU_BUF_SIZE=256
+# We start gcoap manually after credential initialization
+CFLAGS += -DGCOAP_INIT_DELAY=1
 
 # Required by gcoap example
 USEMODULE += od
