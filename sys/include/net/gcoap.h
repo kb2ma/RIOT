@@ -455,6 +455,16 @@ extern "C" {
 #define GCOAP_PAYLOAD_MARKER    (0xFF)
 
 /**
+ * @ingroup net_gcoap_conf
+ * @brief   Flag to delay initialization until explicit command
+ *
+ * By default gcoap starts at auto-initialization time.
+ */
+#ifndef GCOAP_INIT_DELAY
+#define GCOAP_INIT_DELAY        0
+#endif
+
+/**
  * @name    States for the memo used to track waiting for a response
  * @{
  */
