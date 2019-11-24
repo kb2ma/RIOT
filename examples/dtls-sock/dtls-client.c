@@ -80,13 +80,14 @@ static int client_send(char *addr_str, char *data, size_t datalen)
     remote.port = DTLS_DEFAULT_PORT;
 
     /* get interface */
-    int iface = ipv6_addr_split_iface(addr_str);
-    if (iface >= 0) {
-        if (gnrc_netif_get_by_pid(iface) == NULL) {
+    char *iface = ipv6_addr_split_iface(addr_str);
+    if (iface) {
+        int pid = atoi(iface);
+        if (gnrc_netif_get_by_pid(pid) == NULL) {
             puts("Invalid network interface");
             return -1;
         }
-        remote.netif = iface;
+        remote.netif = pid;
     } else if (gnrc_netif_numof() == 1) {
         /* assign the single interface found in gnrc_netif_numof() */
         remote.netif = gnrc_netif_iter(NULL)->pid;
