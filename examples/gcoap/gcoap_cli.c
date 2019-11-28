@@ -437,6 +437,7 @@ void gcoap_cli_init(void)
 
     /* tell gcoap with tag to use */
     gcoap_set_credential_tag(SOCK_DTLS_GCOAP_TAG);
+    gcoap_init();
 #endif
 
     gcoap_register_listener(&_listener);

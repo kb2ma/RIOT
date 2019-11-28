@@ -37,6 +37,7 @@ USEMODULE += gnrc_icmpv6_echo
 # USEMODULE += wolfssl_sock_dtls
 CFLAGS += -DDTLS_PSK
 # CFLAGS += -DDTLS_ECC
+CFLAGS += -DGCOAP_NO_AUTO_INIT=1
 # Uncomment to enable debug logs when using DTLS
 # CFLAGS += -DDTLS_DEBUG
 # Payload size might be bigger when using DTLS, causing errors not present
