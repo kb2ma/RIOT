@@ -114,6 +114,7 @@ static char *_parse_schema(char *uri, char **port, int instance_id);
  */
 static void _parse_host_and_port(char **host, char **port, char *default_port);
 
+#if defined(MODULE_GNRC_NETIF) || defined(DOXYGEN)
 /**
  * @brief Tries to find an interface in the host string. If not, it will check
  *        if there only exists one interface, and will use it
@@ -131,6 +132,7 @@ static netif_t *_get_interface(char *host);
  * @param[in]  netif        Network interface to assign
  */
 static void _set_interface(sock_udp_ep_t *ep, const netif_t *netif);
+#endif
 
 void *lwm2m_connect_server(uint16_t sec_obj_inst_id, void *user_data)
 {
@@ -193,9 +195,15 @@ bool lwm2m_session_is_equal(void *session1, void *session2, void *user_data)
     lwm2m_client_connection_t *conn_1 = (lwm2m_client_connection_t *)session1;
     lwm2m_client_connection_t *conn_2 = (lwm2m_client_connection_t *)session2;
 
+#ifdef MODULE_LWIP_IPV4
+    return ((conn_1->remote.port == conn_2->remote.port) &&
+            ipv4_addr_equal((ipv4_addr_t *)&(conn_1->remote.addr.ipv4),
+                            (ipv4_addr_t *)&(conn_2->remote.addr.ipv4)));
+#else
     return ((conn_1->remote.port == conn_2->remote.port) &&
             ipv6_addr_equal((ipv6_addr_t *)&(conn_1->remote.addr.ipv6),
                             (ipv6_addr_t *)&(conn_2->remote.addr.ipv6)));
+#endif
 }
 
 uint8_t lwm2m_buffer_send(void *sessionH, uint8_t *buffer, size_t length,
@@ -226,14 +234,28 @@ lwm2m_client_connection_t *lwm2m_client_connection_find(
     char ip[128];
     uint8_t ip_len = 128;
 
+#ifdef MODULE_LWIP_IPV4
+    ipv4_addr_to_str(ip, (ipv4_addr_t *)&remote->addr.ipv4, ip_len);
+    DEBUG("Looking for connection from %s:%d\n", ip, remote->port);
+#else
     ipv6_addr_to_str(ip, (ipv6_addr_t *)&remote->addr.ipv6, ip_len);
     DEBUG("Looking for connection from [%s]:%d\n", ip, remote->port);
+#endif
 
     if (conn_list == NULL) {
         DEBUG("Conn list is null!");
     }
 
     while(conn != NULL) {
+#ifdef MODULE_LWIP_IPV4
+        ipv4_addr_to_str(ip, (ipv4_addr_t *)&conn->remote.addr.ipv4, ip_len);
+        DEBUG("Comparing to %s:%d\n", ip, conn->remote.port);
+        if ((conn->remote.port == remote->port) &&
+            ipv4_addr_equal((ipv4_addr_t *)&(conn->remote.addr.ipv4),
+                            (ipv4_addr_t *)&(remote->addr.ipv4))) {
+            break;
+        }
+#else
         ipv6_addr_to_str(ip, (ipv6_addr_t *)&conn->remote.addr.ipv6, ip_len);
         DEBUG("Comparing to [%s]:%d\n", ip, conn->remote.port);
         if ((conn->remote.port == remote->port) &&
@@ -241,6 +263,7 @@ lwm2m_client_connection_t *lwm2m_client_connection_find(
                             (ipv6_addr_t *)&(remote->addr.ipv6))) {
             break;
         }
+#endif  /* MODULE_GNRC_NETIF */
         conn = conn->next;
     }
     return conn;
@@ -295,24 +318,29 @@ static void _parse_host_and_port(char **host, char **port, char *default_port)
     char *_port = NULL;
     char *pos = *host;
 
+    /* parse for IPv6 */
     if (pos[0] == '[') {
         (*host)++;
         pos = strrchr(pos, ']');
+        if (pos) {
+            *pos = '\0';
+        }
     }
 
     _port = strrchr(pos, ':');
     if (!_port) {
-        *pos = '\0';
         DEBUG("[_parse_port] No port specified, using default\n");
         _port = default_port;
+        /* assume host is null terminated; no action required */
     }
     else {
-        *(_port - 1) = '\0';
+        *_port  = '\0';
         _port++;
     }
     *port = _port;
 }
 
+#ifdef MODULE_GNRC_NETIF
 static void _set_interface(sock_udp_ep_t *ep, const netif_t *netif)
 {
     if (netif == NULL || ep == NULL) {
@@ -352,6 +380,7 @@ static netif_t *_get_interface(char *host)
 
     return netif;
 }
+#endif  /* MODULE_GNRC_NETIF */
 
 static lwm2m_client_connection_t *_connection_create(int instance_id,
                                         lwm2m_client_data_t *client_data)
@@ -388,10 +417,21 @@ static lwm2m_client_connection_t *_connection_create(int instance_id,
     conn->next = client_data->conn_list;
 
     /* configure to any IPv6 */
-    conn->remote.family = AF_INET6;
+    if (IS_USED(MODULE_LWIP_IPV4)) {
+        conn->remote.family = AF_INET;
+    }
+    else {
+        conn->remote.family = AF_INET6;
+    }
     conn->remote.netif = SOCK_ADDR_ANY_NETIF;
     conn->remote.port = atoi(port);
 
+#ifdef MODULE_LWIP_IPV4
+    if (!ipv4_addr_from_str((ipv4_addr_t *)&conn->remote.addr.ipv4, host)) {
+        DEBUG("[_connection_create] IPv4 address malformed\n");
+        goto free_out;
+    }
+#else
     if (!ipv6_addr_from_str((ipv6_addr_t *)&conn->remote.addr.ipv6, host)) {
         DEBUG("[_connection_create] IPv6 address malformed\n");
         goto free_out;
@@ -402,6 +442,7 @@ static lwm2m_client_connection_t *_connection_create(int instance_id,
         goto free_out;
     }
 
+#ifdef MODULE_GNRC_NETIF
     /* If the address is a link-local one first check if interface is specified,
      * if not, check the number of interfaces and default to the first if there
      * is only one defined. */
@@ -414,6 +455,8 @@ static lwm2m_client_connection_t *_connection_create(int instance_id,
             _set_interface(&conn->remote, netif);
         }
     }
+#endif  /* MODULE_GNRC_NETIF */
+#endif  /* NODULE_LWIP_IPV4 */
 
     conn->last_send = lwm2m_gettime();
     goto out;

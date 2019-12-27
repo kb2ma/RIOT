@@ -20,8 +20,9 @@
  */
 
 #include <string.h>
-
+#include "kernel_defines.h"
 #include "liblwm2m.h"
+#include "timex.h"
 
 #include "lwm2m_platform.h"
 #include "lwm2m_client.h"
@@ -67,7 +68,12 @@ lwm2m_context_t *lwm2m_client_run(lwm2m_client_data_t *client_data,
     int res;
 
     _client_data = client_data;
-    _client_data->local_ep.family = AF_INET6;
+    if (IS_USED(MODULE_LWIP_IPV4)) {
+        _client_data->local_ep.family = AF_INET;
+    }
+    else {
+        _client_data->local_ep.family = AF_INET6;
+    }
     _client_data->local_ep.netif = SOCK_ADDR_ANY_NETIF;
 
     /* create sock for UDP server */
@@ -167,7 +173,7 @@ static void *_lwm2m_client_run(void *arg)
                 break;
         }
 
-        DEBUG("Waiting for UDP packet on port: %d\n", _client_data->sock.local.port);
+        DEBUG("Waiting for UDP packet on port: %d\n", _client_data->local_ep.port);
         rcv_len = sock_udp_recv(&_client_data->sock, &rcv_buf, sizeof(rcv_buf),
                                 tv * US_PER_SEC, &remote);
         DEBUG("sock_udp_recv()\n");
