@@ -23,6 +23,9 @@
 #include "lwip/opt.h"
 #include "lwip/sys.h"
 
+#ifdef MODULE_GCOAP
+#include "net/gcoap.h"
+#endif
 #include "msg.h"
 #include "sema.h"
 #include "thread.h"
@@ -155,6 +158,10 @@ u32_t sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
         case _MSG_SUCCESS:
             *msg = m.content.ptr;
             return (u32_t)((stop - start) / US_PER_MS);
+#ifdef MODULE_GCOAP
+        /* Used by gcoap to break out of blocking wait on network recv. */
+        case GCOAP_MSG_TYPE_INTR:
+#endif
         case _MSG_TIMEOUT:
             break;
         default:    /* should not happen */
