@@ -814,7 +814,11 @@ size_t gcoap_req_send(const uint8_t *buf, size_t len,
         msg_t mbox_msg;
         mbox_msg.type          = GCOAP_MSG_TYPE_INTR;
         mbox_msg.content.value = 0;
+#ifdef MODULE_LWIP_SOCK_UDP
+        if (mbox_try_put(&_sock.conn->recvmbox.mbox, &mbox_msg)) {
+#else
         if (mbox_try_put(&_sock.reg.mbox, &mbox_msg)) {
+#endif
             /* start response wait timer on the gcoap thread */
             memo->timeout_msg.type        = GCOAP_MSG_TYPE_TIMEOUT;
             memo->timeout_msg.content.ptr = (char *)memo;
