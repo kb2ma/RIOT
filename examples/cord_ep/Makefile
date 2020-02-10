@@ -10,6 +10,7 @@ RIOTBASE ?= $(CURDIR)/../..
 USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_ipv6_default
+USEMODULE += gnrc_sock_udp
 USEMODULE += gnrc_icmpv6_echo
 
 USEMODULE += cord_ep_standalone

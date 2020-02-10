@@ -11,6 +11,7 @@ RIOTBASE ?= $(CURDIR)/../..
 USEMODULE += gnrc_netdev_default
 USEMODULE += auto_init_gnrc_netif
 USEMODULE += gnrc_ipv6_default
+USEMODULE += gnrc_sock_udp
 
 # Run the simple CoRE resource directory
 USEMODULE += cord_epsim
