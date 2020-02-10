@@ -113,7 +113,11 @@ static void *_event_loop(void *arg)
 
     sock_udp_ep_t local;
     memset(&local, 0, sizeof(sock_udp_ep_t));
+#ifdef SOCK_HAS_IPV6
     local.family = AF_INET6;
+#else        
+    local.family = AF_INET;
+#endif
     local.netif  = SOCK_ADDR_ANY_NETIF;
     local.port   = CONFIG_GCOAP_PORT;
 
