@@ -802,16 +802,16 @@ size_t gcoap_req_send(const uint8_t *buf, size_t len,
         }
     }
 
-    /* Memos complete; send msg and start timer */
-    ssize_t res = sock_udp_send(&_sock, buf, len, remote);
-
-    /* timeout may be zero for non-confirmable */
-    if ((memo != NULL) && (res > 0) && (timeout > 0)) {
+    ssize_t res = 1;
+    /* Memos complete, start timer; timeout may be zero for non-confirmable.
+     * Must start timer *before* sending message to avoid race condition on
+     * mbox. */
+    if ((memo != NULL) && (timeout > 0)) {
         /* We assume gcoap_req_send() is called on some thread other than
          * gcoap's. First, put a message in the mbox for the sock udp object,
          * which will interrupt listening on the gcoap thread. (When there are
          * no outstanding requests, gcoap blocks indefinitely in _listen() at
-         * sock_udp_recv().) While the message sent here is outstanding, the
+         * sock_udp_recv().) While the message sent below is outstanding, the
          * sock_udp_recv() call will be set to a short timeout so the request
          * timer below, also on the gcoap thread, is processed in a timely
          * manner. */
@@ -829,9 +829,13 @@ size_t gcoap_req_send(const uint8_t *buf, size_t len,
             xtimer_set_msg(&memo->response_timer, timeout, &memo->timeout_msg, _pid);
         }
         else {
+            DEBUG("gcoap: can't wake up mbox\n");
             res = 0;
-            DEBUG("gcoap: can't wake up mbox; no timeout for msg\n");
         }
+    }
+
+    if (res) {
+        res = sock_udp_send(&_sock, buf, len, remote);
     }
     if (res <= 0) {
         if (memo != NULL) {
