@@ -216,11 +216,14 @@ static ssize_t _riot_board_handler(coap_pkt_t *pdu, uint8_t *buf, size_t len, vo
 
 static size_t _send(uint8_t *buf, size_t len, char *addr_str, char *port_str)
 {
-    ipv6_addr_t addr;
     size_t bytes_sent;
     sock_udp_ep_t remote;
 
+#ifdef SOCK_HAS_IPV6
     remote.family = AF_INET6;
+#else        
+    remote.family = AF_INET;
+#endif
 
 #ifdef MODULE_GNRC_SOCK_UDP
     /* parse for interface */
@@ -246,7 +249,9 @@ static size_t _send(uint8_t *buf, size_t len, char *addr_str, char *port_str)
     remote.netif = SOCK_ADDR_ANY_NETIF;
 #endif
 
+#ifdef SOCK_HAS_IPV6
     /* parse destination address */
+    ipv6_addr_t addr;
     if (ipv6_addr_from_str(&addr, addr_str) == NULL) {
         puts("gcoap_cli: unable to parse destination address");
         return 0;
@@ -258,6 +263,14 @@ static size_t _send(uint8_t *buf, size_t len, char *addr_str, char *port_str)
     }
 #endif
     memcpy(&remote.addr.ipv6[0], &addr.u8[0], sizeof(addr.u8));
+#else  /* SOCK_HAS_IPV6 */
+    ipv4_addr_t addr;
+    if (!ipv4_addr_from_str((ipv4_addr_t *)&addr, addr_str)) {
+        puts("gcoap_cli: unable to parse destination address");
+        return 0;
+    }
+    memcpy(&remote.addr.ipv4[0], &addr.u8[0], sizeof(addr.u8));
+#endif  /* SOCK_HAS_IPV6 */
 
     /* parse port */
     remote.port = atoi(port_str);

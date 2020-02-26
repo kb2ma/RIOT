@@ -21,6 +21,17 @@ ifeq (1,$(LWIP_IPV6))
   USEMODULE += lwip_sock_async
   # Activates recv timeout capability
   CFLAGS += -DLWIP_SO_RCVTIMEO
+else ifeq (1,$(LWIP_IPV4))
+  USEMODULE += ipv4_addr
+  USEMODULE += lwip_netdev
+  USEMODULE += lwip_arp
+  USEMODULE += lwip_dhcp_auto
+  USEMODULE += lwip_sock_ip
+  USEMODULE += lwip_sock_udp
+  USEMODULE += lwip_sock_async
+  CFLAGS += -DETHARP_SUPPORT_STATIC_ENTRIES=1
+  # Activates recv timeout capability
+  CFLAGS += -DLWIP_SO_RCVTIMEO
 else
   # GNRC default
   USEMODULE += gnrc_netdev_default
