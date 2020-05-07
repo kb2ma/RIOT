@@ -1061,7 +1061,10 @@ static inline ssize_t coap_opt_add_uri_query(coap_pkt_t *pkt, const char *key,
  * @return        <0 on error
  * @return        -ENOSPC if no available options or pkt full
  */
-ssize_t coap_opt_add_proxy_uri(coap_pkt_t *pkt, const char *uri);
+static inline ssize_t coap_opt_add_proxy_uri(coap_pkt_t *pkt, const char *uri)
+{
+    return coap_opt_add_opaque(pkt, COAP_OPT_PROXY_URI, (uint8_t *)uri, strlen(uri));
+}
 
 /**
  * @brief   Encode the given array of characters as option(s) into pkt
