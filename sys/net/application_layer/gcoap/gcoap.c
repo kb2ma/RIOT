@@ -135,19 +135,21 @@ static void _on_sock_evt(sock_udp_t *sock, sock_async_flags_t type, void *arg)
     gcoap_request_memo_t *memo = NULL;
 
     (void)arg;
-    if (type & SOCK_ASYNC_MSG_RECV) {
+    while (type & SOCK_ASYNC_MSG_RECV) {
         ssize_t res = sock_udp_recv(sock, _listen_buf, sizeof(_listen_buf),
                                     0, &remote);
         if (res <= 0) {
-            DEBUG("gcoap: udp recv failure: %d\n", (int)res);
-            return;
+            if (res != -EAGAIN) {
+                DEBUG("gcoap: udp recv failure: %d\n", (int)res);
+            }
+            break;
         }
 
         res = coap_parse(&pdu, _listen_buf, res);
         if (res < 0) {
             DEBUG("gcoap: parse failure: %d\n", (int)res);
             /* If a response, can't clear memo, but it will timeout later. */
-            return;
+            continue;
         }
 
         /* validate class and type for incoming */
@@ -168,7 +170,7 @@ static void _on_sock_evt(sock_udp_t *sock, sock_async_flags_t type, void *arg)
                     DEBUG("gcoap: empty NON msg\n");
                 }
                 else {
-                    goto empty_as_response;
+                    DEBUG("gcoap: empty ack/reset not handled yet\n");
                 }
             }
             /* normal request */
@@ -188,10 +190,6 @@ static void _on_sock_evt(sock_udp_t *sock, sock_async_flags_t type, void *arg)
                 DEBUG("gcoap: illegal request type: %u\n", coap_get_type(&pdu));
             }
             break;
-
-empty_as_response:
-            DEBUG("gcoap: empty ack/reset not handled yet\n");
-            return;
 
         /* incoming response */
         case COAP_CLASS_SUCCESS:
